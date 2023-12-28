@@ -2,6 +2,8 @@
 simu.num <- Sys.getenv("SIMU_NUM")
 n <- Sys.getenv("SAMPLE_N")
 
+print(simu.num)
+print(n)
 
 library(here)
 library(dplyr)
