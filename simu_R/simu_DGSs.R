@@ -261,7 +261,7 @@ true_curve <- function(simu.num = 1, a.pts.dist = 0.05, N = 1e+07){
   for (i in 1:length(a.vals)) {
     a <- a.vals[i]
 
-    data_a <- gene_data(simu.num=simu.num, n=N, a=a)
+    data_a <- DGS[[simu.num]](n=N, a=a) # gene_data(simu.num=simu.num, n=N, a=a)
     psi0_a[i] <- mean(data_a$Y)
   }
   

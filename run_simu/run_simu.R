@@ -12,6 +12,7 @@ library(hal9001)
 
 R.files.sources <- c(list.files("R", pattern="*.R$", full.names=TRUE),
                      list.files("simu_R", pattern="*.R$", full.names=TRUE))
+print(R.files.sources)
 
 sapply(R.files.sources, source)
 
