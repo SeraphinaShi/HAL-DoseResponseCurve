@@ -26,9 +26,6 @@ eval_points = seq(0,5,0.25)
 
 set.seed(123)
 
-generate_data_func <- DGS[[simu.num]]
-
-
 ##========True curve
 psi0_all <- true_curve(simu.num = simu.num, N = 1000)
 psi0_pnt <- psi0_all[psi0_all$a %in% eval_points,] 
@@ -38,7 +35,7 @@ save.image(file=here("data", "rdata", paste("simu", simu.num, "psi0.Rdata", sep=
 ## ------1st order HAL
 set.seed(123)
 
-results_1 <- run_simu_rep(generate_data_func, eval_points, y_type = "binomial", n=n, rounds=rep.num)
+results_1 <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
 save.image(file=here("data", "rdata", paste("simu", simu.num, n, "first.Rdata", sep="_")))
 
 ## ------0 order HAL
@@ -46,14 +43,14 @@ rm(results_1)
 
 set.seed(123)
 
-results_0 <- run_simu_rep(generate_data_func, eval_points, y_type = "binomial", n=n, rounds=rep.num, defualt_setting = T)
+results_0 <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, defualt_setting = T)
 save.image(file=here("data", "rdata", paste("simu", simu.num, n, "zero.Rdata", sep="_")))
 
 ## ------gird
 rm(results_0)
 
 set.seed(123)
-results_grid <- run_simu_scaled_rep(generate_data_func, eval_points, y_type = "binomial", n=n, rounds=rep.num)
+results_grid <- run_simu_scaled_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
 
 save.image(file=here("data", "rdata", paste("simu", simu.num, n, "grid.Rdata", sep="_")))
 
@@ -67,15 +64,15 @@ save.image(file=here("data", "rdata", paste("simu", simu.num, n, "adapt.Rdata", 
 
 ## ------gam
 set.seed(123)
-results_gam <- run_simu_gam_poly_rep(generate_data_func, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "GAM")
+results_gam <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "GAM")
 save.image(file=here("data", "rdata", paste("simu", simu.num, n, "GAM.Rdata", sep="_")))
 
 ## -------poly
 set.seed(123)
-results_poly <- run_simu_gam_poly_rep(generate_data_func, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "POLY")
+results_poly <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "POLY")
 save.image(file=here("data", "rdata", paste("simu", simu.num, n, "poly.Rdata", sep="_")))
 
 ## -------poly
 set.seed(123)
-results_npcausal <- run_simu_npcausal_rep(generate_data_func, eval_points, y_type = "binomial", n=n, rounds=rep.num)
+results_npcausal <- run_simu_npcausal_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
 save.image(file=here("data", "rdata", paste("simu", simu.num, n, "npcausal.Rdata", sep="_")))

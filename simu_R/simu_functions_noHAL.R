@@ -8,9 +8,9 @@ library(mgcv)
 #       - sample size n
 # returns the estimated ATE and empirical 95% CI
 ##############################################################
-run_simu_1round_gam_poly <- function(gen_data_functions, eval_points, y_type, n, method){
+run_simu_1round_gam_poly <- function(simu.num, eval_points, y_type, n, method){
   
-  obs <- gen_data_functions(n)
+  obs <- DGS(simu.num, n)
   
   y_name <- "Y"
   x_names <- names(obs)[names(obs) != y_name]
@@ -125,14 +125,14 @@ bootstrap_inference_gam_poly <- function(obs, eval_points, form, method){
 
 # returns the estimated ATE, empirical 95% CI, and coverage rates
 ##############################################################
-run_simu_gam_poly_rep <- function(gen_data_functions, eval_points, y_type, n, rounds,  method = "GAM"){
+run_simu_gam_poly_rep <- function(simu.num, eval_points, y_type, n, rounds,  method = "GAM"){
   
   result_list <- list()
   
   for(r in 1:rounds){
     print(paste0("round ", r))
     result <- tryCatch({
-      run_simu_1round_gam_poly(gen_data_functions, eval_points, y_type, n=n, method=method)
+      run_simu_1round_gam_poly(simu.num, eval_points, y_type, n=n, method=method)
     }, error = function(e) {
       print(paste0("Error: ", e$message))
       NULL
@@ -141,7 +141,7 @@ run_simu_gam_poly_rep <- function(gen_data_functions, eval_points, y_type, n, ro
     while(is.null(result)) {
       print('retry with a new generated data')
       result <- tryCatch({
-        run_simu_1round_gam_poly(gen_data_functions, eval_points, y_type, n=n, method=method)
+        run_simu_1round_gam_poly(simu.num, eval_points, y_type, n=n, method=method)
       }, error = function(e) {
         print(paste0("Error: ", e$message))
         NULL

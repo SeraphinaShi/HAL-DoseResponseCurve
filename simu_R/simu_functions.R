@@ -445,7 +445,7 @@ run_simu_smoothness_adaptive_HAL_rep <- function(simu.num, eval_points, y_type, 
 
 run_simu_smoothness_adaptive_HAL_1round <- function(simu.num, eval_points, y_type, n){
   
-  dat <- gene_data(simu.num, n, a=NA)
+  dat <- DGS(simu.num, n)
   
   y_name = "Y"
   x_names = names(dat)[names(dat) != 'Y']
@@ -624,11 +624,11 @@ run_simu_smoothness_adaptive_HAL_1round <- function(simu.num, eval_points, y_typ
 #       - sample size n
 # returns the estimated ATE and empirical 95% CI
 ##############################################################
-run_simu_1round <- function(gen_data_func, eval_points, y_type, n, defualt_setting = F){
+run_simu_1round <- function(simu.num, eval_points, y_type, n, defualt_setting = F){
   
   bootstrap = F
   
-  obs <- gen_data_func(n)
+  obs <- DGS(simu.num, n)
   
   y_name = "Y"
   x_names = names(obs)[names(obs) != 'Y']
@@ -752,7 +752,7 @@ run_simu_1round <- function(gen_data_func, eval_points, y_type, n, defualt_setti
 
 # returns the estimated ATE, empirical 95% CI, and coverage rates
 ##############################################################
-run_simu_rep <- function(gen_data_func, eval_points, y_type, n, rounds, defualt_setting = F){
+run_simu_rep <- function(simu.num, eval_points, y_type, n, rounds, defualt_setting = F){
   
   bootstrap = F
   
@@ -761,7 +761,7 @@ run_simu_rep <- function(gen_data_func, eval_points, y_type, n, rounds, defualt_
   for(r in 1:rounds){
     print(paste0("round ", r))
     result <- tryCatch({
-      run_simu_1round(gen_data_func, eval_points, y_type, n=n, defualt_setting)
+      run_simu_1round(simu.num, eval_points, y_type, n=n, defualt_setting)
     }, error = function(e) {
       print(paste0("Error: ", e$message))
       NULL
@@ -770,7 +770,7 @@ run_simu_rep <- function(gen_data_func, eval_points, y_type, n, rounds, defualt_
     while(is.null(result)) {
       print('retry with a new generated data')
       result <- tryCatch({
-        run_simu_1round(gen_data_func, eval_points, y_type, n=n, defualt_setting)
+        run_simu_1round(simu.num, eval_points, y_type, n=n, defualt_setting)
       }, error = function(e) {
         print(paste0("Error: ", e$message))
         NULL
@@ -815,9 +815,9 @@ run_simu_rep <- function(gen_data_func, eval_points, y_type, n, rounds, defualt_
 
 
 ##############################################################
-run_simu_1round_scalers <- function(gen_data_func, eval_points, y_type, n, lambda_scalers){
+run_simu_1round_scalers <- function(simu.num, eval_points, y_type, n, lambda_scalers){
   
-  obs <- gen_data_func(n)
+  obs <- DGS(simu.num, n)
 
   y_name = "Y"
   x_names = names(obs)[names(obs) != 'Y']
@@ -952,13 +952,13 @@ run_simu_1round_scalers <- function(gen_data_func, eval_points, y_type, n, lambd
 
 ##############################################################
 
-run_simu_scaled_rep <- function(gen_data_func, eval_points, y_type, n, rounds){
+run_simu_scaled_rep <- function(simu.num, eval_points, y_type, n, rounds){
   lambda_scalers = c(1.2, 1.1, 10^seq(from=0, to=-3, length=20))
   result_list <- list()
   for(r in 1:rounds){
     print(paste0("round ", r))
     result <- tryCatch({
-      run_simu_1round_scalers(gen_data_func, eval_points, y_type, n=n, lambda_scalers=lambda_scalers)
+      run_simu_1round_scalers(simu.num, eval_points, y_type, n=n, lambda_scalers=lambda_scalers)
     }, error = function(e) {
       print(paste0("Error: ", e$message))
       NULL
@@ -967,7 +967,7 @@ run_simu_scaled_rep <- function(gen_data_func, eval_points, y_type, n, rounds){
     while(is.null(result)) {
       print('retry with a new generated data')
       result <- tryCatch({
-        run_simu_1round_scalers(gen_data_func, eval_points, y_type, n=n, lambda_scalers=lambda_scalers)
+        run_simu_1round_scalers(simu.num, eval_points, y_type, n=n, lambda_scalers=lambda_scalers)
       }, error = function(e) {
         print(paste0("Error: ", e$message))
         NULL

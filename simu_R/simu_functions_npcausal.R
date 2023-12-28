@@ -6,9 +6,9 @@
 #       - sample size n
 # returns the estimated ATE and empirical 95% CI
 ##############################################################
-run_simu_1round_npcausal <- function(gen_data_functions, eval_points, y_type, n){
+run_simu_1round_npcausal <- function(simu.num, eval_points, y_type, n){
   
-  obs <- gen_data_functions(n)
+  obs <-  DGS(simu.num, n)
   
   l_names <-  names(obs)[! names(obs) %in% c('Y', 'A')]
   x = obs %>% select(all_of(l_names)) %>% mutate_if(sapply(., is.factor), as.numeric) 
@@ -52,14 +52,14 @@ run_simu_1round_npcausal <- function(gen_data_functions, eval_points, y_type, n)
 
 # returns the estimated ATE, empirical 95% CI, and coverage rates
 ##############################################################
-run_simu_npcausal_rep <- function(gen_data_functions, eval_points, y_type, n, rounds){
+run_simu_npcausal_rep <- function(simu.num, eval_points, y_type, n, rounds){
   
   result_list <- list()
   
   for(r in 1:rounds){
     print(paste0("round ", r))
     result <- tryCatch({
-      run_simu_1round_npcausal(gen_data_functions, eval_points, y_type, n=n)
+      run_simu_1round_npcausal(simu.num, eval_points, y_type, n=n)
     }, error = function(e) {
       print(paste0("Error: ", e$message))
       NULL
@@ -68,7 +68,7 @@ run_simu_npcausal_rep <- function(gen_data_functions, eval_points, y_type, n, ro
     while(is.null(result)) {
       print('retry with a new generated data')
       result <- tryCatch({
-        run_simu_1round_npcausal(gen_data_functions, eval_points, y_type, n=n)
+        run_simu_1round_npcausal(simu.num, eval_points, y_type, n=n)
       }, error = function(e) {
         print(paste0("Error: ", e$message))
         NULL
