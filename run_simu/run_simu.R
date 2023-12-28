@@ -2,8 +2,13 @@
 simu.num <- Sys.getenv("SIMU_NUM")
 n <- Sys.getenv("SAMPLE_N")
 
+half1 <- Sys.getenv("HALF1")
+half2 <- Sys.getenv("HALF2")
+
 print(simu.num)
 print(n)
+
+
 
 library(here)
 library(dplyr)
@@ -20,59 +25,71 @@ sapply(R.files.sources, source)
 set.seed(123)
 
 
-rep.num = 2
+rep.num = 500
 
 eval_points = seq(0,5,0.25)
 
 set.seed(123)
 
 ##========True curve
-psi0_all <- true_curve(simu.num = simu.num, N = 1000)
+psi0_all <- true_curve(simu.num = simu.num, N = 1e+07)
 psi0_pnt <- psi0_all[psi0_all$a %in% eval_points,] 
 
 save.image(file=here("data", "rdata", paste("simu", simu.num, "psi0.Rdata", sep="_")))
 
-## ------1st order HAL
-set.seed(123)
+if(half1){
+  ## ------1st order HAL
+  set.seed(123)
+  
+  results_1 <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "first.Rdata", sep="_")))
+  
+  rm(results_1)
+  
+  ## ------0 order HAL
+  set.seed(123)
+  
+  results_0 <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, defualt_setting = T)
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "zero.Rdata", sep="_")))
+  
+  rm(results_0)
+  
+  ## ------gird
+  set.seed(123)
+  results_grid <- run_simu_scaled_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
+  
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "grid.Rdata", sep="_")))
+  
+  rm(results_grid)
+}
 
-results_1 <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
-save.image(file=here("data", "rdata", paste("simu", simu.num, n, "first.Rdata", sep="_")))
+if(half2){
+  ## -------apadt smoothness HAL
+  set.seed(123)
+  results_adapt <- run_simu_smoothness_adaptive_HAL_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "adapt.Rdata", sep="_")))
+  
+  rm(results_adapt)
+  
+  ## ------gam
+  set.seed(123)
+  results_gam <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "GAM")
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "GAM.Rdata", sep="_")))
+  
+  rm(results_gam)
+  
+  ## -------poly
+  set.seed(123)
+  results_poly <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "POLY")
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "poly.Rdata", sep="_")))
+  
+  rm(results_poly)
+  
+  ## -------poly
+  set.seed(123)
+  results_npcausal <- run_simu_npcausal_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "npcausal.Rdata", sep="_")))
+  
+  rm(results_npcausal)
+}
 
-## ------0 order HAL
-rm(results_1)
-
-set.seed(123)
-
-results_0 <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, defualt_setting = T)
-save.image(file=here("data", "rdata", paste("simu", simu.num, n, "zero.Rdata", sep="_")))
-
-## ------gird
-rm(results_0)
-
-set.seed(123)
-results_grid <- run_simu_scaled_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
-
-save.image(file=here("data", "rdata", paste("simu", simu.num, n, "grid.Rdata", sep="_")))
-
-## -------apadt smoothness HAL
-rm(results_grid)
-
-set.seed(123)
-results_adapt <- run_simu_smoothness_adaptive_HAL_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
-save.image(file=here("data", "rdata", paste("simu", simu.num, n, "adapt.Rdata", sep="_")))
-
-
-## ------gam
-set.seed(123)
-results_gam <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "GAM")
-save.image(file=here("data", "rdata", paste("simu", simu.num, n, "GAM.Rdata", sep="_")))
-
-## -------poly
-set.seed(123)
-results_poly <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "POLY")
-save.image(file=here("data", "rdata", paste("simu", simu.num, n, "poly.Rdata", sep="_")))
-
-## -------poly
-set.seed(123)
-results_npcausal <- run_simu_npcausal_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
-save.image(file=here("data", "rdata", paste("simu", simu.num, n, "npcausal.Rdata", sep="_")))
