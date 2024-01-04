@@ -952,8 +952,13 @@ run_simu_1round_scalers <- function(simu.num, eval_points, y_type, n, lambda_sca
 
 ##############################################################
 
-run_simu_scaled_rep <- function(simu.num, eval_points, y_type, n, rounds){
+run_simu_scaled_rep <- function(simu.num, eval_points, y_type, n, rounds, grid_extra = FALSE){
+  
   lambda_scalers = c(1.2, 1.1, 10^seq(from=0, to=-3, length=20))
+  if(grid_extra){
+    lambda_scalers = seq(from=5, to=1, length=11)
+  } 
+  
   result_list <- list()
   for(r in 1:rounds){
     print(paste0("round ", r))

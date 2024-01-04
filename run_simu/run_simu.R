@@ -4,7 +4,8 @@ n <- Sys.getenv("SAMPLE_N")
 
 half1 <- Sys.getenv("HALF1")
 half2 <- Sys.getenv("HALF2")
-
+grid_extra <- Sys.getenv("GRID_EXTRA")
+  
 print(simu.num)
 print(n)
 
@@ -93,3 +94,10 @@ if(half2){
   rm(results_npcausal)
 }
 
+
+if(grid_extra){
+  set.seed(123)
+  results_grid_extra <- run_simu_scaled_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, grid_extra = T)
+  
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "grid_extra.Rdata", sep="_")))
+}
