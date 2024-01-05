@@ -482,7 +482,8 @@ plot_performences_adapt <- function(df, save_plot=NA){
 
 plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=NA){
   
-  curve_pnts <- seq(from = 0.25, to = 4.75, by = 0.5)
+  curve_pnts <- sort(c(seq(from = 0.25, to = 4.75, by = 0.5), 2, 4)) 
+  
   df <- df[df$a %in%  curve_pnts,]
   
   legend_undersmoothing = ggplot(df) +  
@@ -496,6 +497,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
   p_est_avg_list = list()
   p_bias_list = list()
   p_se_list = list()
+  p_mse_list = list()
   p_bias_se_list = list()
   p_cr_list = list()
   # p_n_basis_list = list()
@@ -516,7 +518,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       scale_fill_manual(breaks=c('Oracal', 'Delta'),
                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
       theme_bw() +
-      labs(x = "", title = paste0('a = ', eval_points[i])) +
+      labs(x = "", title = paste0('a = ', curve_pnts[i])) +
       theme(axis.title=element_blank(),
             plot.title = element_text(hjust = 0.5),
             legend.position='none')
@@ -544,6 +546,18 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     legend <- get_legend(p_se)
     p_se <- p_se + theme(legend.position='none')
     
+    p_mse <- ggplot(df_a, aes(x = lambda_scaler)) +  
+      geom_line(aes(y = MSE, color='Delta')) + 
+      geom_point(aes(y = MSE, color='Delta')) + 
+      geom_line(aes(y = oracal_MSE, color='Oracal')) + 
+      geom_point(aes(y = oracal_MSE, color='Oracal')) +
+      scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      scale_color_manual(name='Method',
+                         breaks=c('Oracal', 'Delta'),
+                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      theme_bw()+
+      theme(axis.title=element_blank()) +
+      theme(legend.position='none')
     
     p_bias_se <- ggplot(df_a, aes(x = lambda_scaler)) + 
       geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
@@ -591,6 +605,10 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
         geom_vline(xintercept = u_g_scaler, lty=2, col = "deepskyblue") +
         geom_vline(xintercept = 1, lty=2, col = "purple") 
       
+      p_mse <- p_mse +      
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "deepskyblue") +
+        geom_vline(xintercept = 1, lty=2, col = "purple") 
+      
       p_bias_se <- p_bias_se +      
         geom_vline(xintercept = u_g_scaler, lty=2, col = "deepskyblue") +
         geom_vline(xintercept = 1, lty=2, col = "purple") 
@@ -604,6 +622,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     p_est_avg_list[[i]] = p_est_avg
     p_bias_list[[i]] = p_bias
     p_se_list[[i]] = p_se
+    p_mse_list[[i]] = p_se
     p_bias_se_list[[i]] = p_bias_se
     p_cr_list[[i]] = p_cr
   }
@@ -612,18 +631,20 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
   g1 <- arrangeGrob(grobs = p_est_avg_list, nrow=1, left = grid::textGrob("Estimation, 95% CI", rot=90, gp=gpar(fontsize=12)))
   g2 <- arrangeGrob(grobs = p_bias_list, nrow=1, left = grid::textGrob("|Bias|", rot=90, gp=gpar(fontsize=12)))
   g3 <- arrangeGrob(grobs = p_se_list, nrow=1, left = grid::textGrob("Standard Error", rot=90, gp=gpar(fontsize=12)))
-  g4 <- arrangeGrob(grobs = p_bias_se_list, nrow=1, left = grid::textGrob("|Bias| / Standard Error", rot=90, gp=gpar(fontsize=12)))
-  g5 <- arrangeGrob(grobs = p_cr_list, nrow=1, left = grid::textGrob("Coverage rate", rot=90, gp=gpar(fontsize=12)) )#,
+  g4 <- arrangeGrob(grobs = p_mse_list, nrow=1, left = grid::textGrob("MSE", rot=90, gp=gpar(fontsize=12)))
+  g5 <- arrangeGrob(grobs = p_bias_se_list, nrow=1, left = grid::textGrob("Bias-SE Ratio", rot=90, gp=gpar(fontsize=12)))
+  g6 <- arrangeGrob(grobs = p_cr_list, nrow=1, left = grid::textGrob("Coverage rate", rot=90, gp=gpar(fontsize=12)) )#,
   # bottom = grid::textGrob("lambda scalers", gp=gpar(fontsize=15)))
   
   
   
-  p <- grid.arrange(g1, g2, g3, g4, g5, legend, legend_undersmoothing,
+  p <- grid.arrange(g1, g2, g3, g4, g5, g6, legend, legend_undersmoothing,
                     layout_matrix = rbind(c(1,NA),
-                                          c(2,7),
-                                          c(3,6),
-                                          c(4,NA),
-                                          c(5,NA)),
+                                          c(2,NA),
+                                          c(3,8),
+                                          c(4,7),
+                                          c(5,NA),
+                                          c(6,NA)),
                     widths=c(13, 1), 
                     top = textGrob("HAL-based plug-in estimator performances for E[Y|a,W] \n", 
                                    gp=gpar(fontsize=18)))  
@@ -809,8 +830,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
     labs(title="(b) Absolute Bias", x="Treatment", y="|Bias|") +
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Method',
-                       breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly'),
-                       values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                       breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
+                       values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
     theme_bw()
   
   legend <- get_legend(p_bias)
