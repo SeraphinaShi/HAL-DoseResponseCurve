@@ -956,7 +956,7 @@ run_simu_scaled_rep <- function(simu.num, eval_points, y_type, n, rounds, grid_e
   
   lambda_scalers = c(1.2, 1.1, 10^seq(from=0, to=-3, length=20))
   if(grid_extra){
-    lambda_scalers = seq(from=5, to=1, length=11)
+    lambda_scalers = sort(unique(c(seq(from=5, to=1, length=11), lambda_scalers)), decreasing = T)
   } 
   
   result_list <- list()

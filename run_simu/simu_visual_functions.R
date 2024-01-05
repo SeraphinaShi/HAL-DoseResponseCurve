@@ -512,7 +512,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       geom_line(aes(x = lambda_scaler, y = y_hat), color = "grey") + 
       geom_point(aes(x = lambda_scaler, y = y_hat)) + 
       geom_hline(aes(yintercept=psi0)) + 
-      scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(breaks=c('Oracal', 'Delta'),
                          values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
       scale_fill_manual(breaks=c('Oracal', 'Delta'),
@@ -527,7 +527,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     p_bias <- ggplot(df_a, aes(x = lambda_scaler, y = bias)) +  
       geom_line(color = "grey") + 
       geom_point() + 
-      scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       theme_bw()+
       theme(axis.title=element_blank())
     
@@ -536,7 +536,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       geom_point(aes(y = SE, color='Delta')) + 
       geom_line(aes(y = oracal_SE, color='Oracal')) + 
       geom_point(aes(y = oracal_SE, color='Oracal')) +
-      scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
                          breaks=c('Oracal', 'Delta'),
                          values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
@@ -551,7 +551,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       geom_point(aes(y = MSE, color='Delta')) + 
       geom_line(aes(y = oracal_MSE, color='Oracal')) + 
       geom_point(aes(y = oracal_MSE, color='Oracal')) +
-      scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
                          breaks=c('Oracal', 'Delta'),
                          values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
@@ -568,7 +568,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       scale_color_manual(name='Method',
                          breaks=c('Oracal', 'Delta'),
                          values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
-      scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       theme_bw() +
       theme(axis.title=element_blank(),
             legend.position='none')
@@ -586,7 +586,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       scale_color_manual(name='Method',
                          breaks=c('Oracal', 'Delta'),
                          values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
-      scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_y_continuous(limits = c(0, 1)) +
       theme_bw()  + 
       theme(axis.title=element_blank(),
@@ -1010,6 +1010,338 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
    
   return(p)
   
+}
+
+
+
+
+
+plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_plot=NA, max_bias_sd=NA){
+  
+  
+  curve_pnts <- sort(c(seq(from = 0.25, to = 4.75, by = 0.5), 2, 4)) 
+  
+  df <- df[df$a %in%  curve_pnts,]
+  
+  legend_undersmoothing = ggplot(df) +  
+    geom_line(aes(x = lambda, y = y_hat, color = "Undersmooth"), lty=2) + 
+    geom_line(aes(x = lambda, y = y_hat, color = "CV"), lty=2) + 
+    theme_bw() +
+    scale_colour_manual(name="Selector",
+                        values=c(Undersmooth="deepskyblue", CV="purple")) #, Local="#619CFF",
+  legend_undersmoothing <- get_legend(legend_undersmoothing)
+  
+  p_est_avg_list = list()
+  p_bias_list = list()
+  p_se_list = list()
+  p_mse_list = list()
+  p_bias_se_list = list()
+  p_cr_list = list()
+  # p_n_basis_list = list()
+  legend = NA
+  
+  for (i in 1:length(curve_pnts)) {
+    df_a <- df %>% filter(a == curve_pnts[i])
+    
+    p_est_avg = ggplot(df_a) +  
+      geom_ribbon(aes(x = lambda, ymin=ci_lwr, ymax=ci_upr, color='Delta', fill = 'Delta'),  alpha=0.5) +
+      geom_ribbon(aes(x = lambda, ymin=oracal_ci_lwr, ymax=oracal_ci_upr,  color='Oracal', fill = 'Oracal'),  alpha=0.5) +
+      geom_line(aes(x = lambda, y = y_hat), color = "grey") + 
+      geom_point(aes(x = lambda, y = y_hat)) + 
+      geom_hline(aes(yintercept=psi0)) + 
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      scale_color_manual(breaks=c('Oracal', 'Delta'),
+                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      scale_fill_manual(breaks=c('Oracal', 'Delta'),
+                        values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      theme_bw() +
+      labs(x = "", title = paste0('a = ', curve_pnts[i])) +
+      theme(axis.title=element_blank(),
+            plot.title = element_text(hjust = 0.5),
+            legend.position='none')
+    
+    
+    p_bias <- ggplot(df_a, aes(x = lambda, y = bias)) +  
+      geom_line(color = "grey") + 
+      geom_point() + 
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      theme_bw()+
+      theme(axis.title=element_blank())
+    
+    p_se <- ggplot(df_a, aes(x = lambda)) +  
+      geom_line(aes(y = SE, color='Delta')) + 
+      geom_point(aes(y = SE, color='Delta')) + 
+      geom_line(aes(y = oracal_SE, color='Oracal')) + 
+      geom_point(aes(y = oracal_SE, color='Oracal')) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      scale_color_manual(name='Method',
+                         breaks=c('Oracal', 'Delta'),
+                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      theme_bw()+
+      theme(axis.title=element_blank())
+    
+    legend <- get_legend(p_se)
+    p_se <- p_se + theme(legend.position='none')
+    
+    p_mse <- ggplot(df_a, aes(x = lambda)) +  
+      geom_line(aes(y = MSE, color='Delta')) + 
+      geom_point(aes(y = MSE, color='Delta')) + 
+      geom_line(aes(y = oracal_MSE, color='Oracal')) + 
+      geom_point(aes(y = oracal_MSE, color='Oracal')) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      scale_color_manual(name='Method',
+                         breaks=c('Oracal', 'Delta'),
+                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      theme_bw()+
+      theme(axis.title=element_blank()) +
+      theme(legend.position='none')
+    
+    p_bias_se <- ggplot(df_a, aes(x = lambda)) + 
+      geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
+      geom_point(aes(y = bias_se_ratio, color = "Delta")) +
+      geom_line(aes(y = oracal_bias_se_ratio, color = "Oracal")) + 
+      geom_point(aes(y = oracal_bias_se_ratio, color = "Oracal")) +
+      geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+      scale_color_manual(name='Method',
+                         breaks=c('Oracal', 'Delta'),
+                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      theme_bw() +
+      theme(axis.title=element_blank(),
+            legend.position='none')
+    
+    if(!is.na(max_bias_sd)){
+      p_bias_se <- p_bias_se + ylim(0,max_bias_sd)
+    }
+    
+    p_cr <- ggplot(df_a, aes(x = lambda)) +  
+      geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=0.95,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
+      geom_line(aes(y = cover_rate, color = "Delta")) + 
+      geom_point(aes(y = cover_rate, color = "Delta")) + 
+      geom_line(aes(y = oracal_cover_rate, color = "Oracal")) + 
+      geom_point(aes(y = oracal_cover_rate, color = "Oracal")) +
+      scale_color_manual(name='Method',
+                         breaks=c('Oracal', 'Delta'),
+                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      scale_y_continuous(limits = c(0, 1)) +
+      theme_bw()  + 
+      theme(axis.title=element_blank(),
+            legend.position='none')
+    
+    if(! is.na(u_g_scaler) ){
+      p_est_avg <- p_est_avg +      
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      
+      p_bias <- p_bias +      
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      
+      p_se <- p_se +      
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      
+      p_mse <- p_mse +      
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      
+      p_bias_se <- p_bias_se +      
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      
+      p_cr <- p_cr +      
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      
+    }
+    
+    p_est_avg_list[[i]] = p_est_avg
+    p_bias_list[[i]] = p_bias
+    p_se_list[[i]] = p_se
+    p_mse_list[[i]] = p_se
+    p_bias_se_list[[i]] = p_bias_se
+    p_cr_list[[i]] = p_cr
+  }
+  
+  
+  g1 <- arrangeGrob(grobs = p_est_avg_list, nrow=1, left = grid::textGrob("Estimation, 95% CI", rot=90, gp=gpar(fontsize=12)))
+  g2 <- arrangeGrob(grobs = p_bias_list, nrow=1, left = grid::textGrob("|Bias|", rot=90, gp=gpar(fontsize=12)))
+  g3 <- arrangeGrob(grobs = p_se_list, nrow=1, left = grid::textGrob("Standard Error", rot=90, gp=gpar(fontsize=12)))
+  g4 <- arrangeGrob(grobs = p_mse_list, nrow=1, left = grid::textGrob("MSE", rot=90, gp=gpar(fontsize=12)))
+  g5 <- arrangeGrob(grobs = p_bias_se_list, nrow=1, left = grid::textGrob("Bias-SE Ratio", rot=90, gp=gpar(fontsize=12)))
+  g6 <- arrangeGrob(grobs = p_cr_list, nrow=1, left = grid::textGrob("Coverage rate", rot=90, gp=gpar(fontsize=12)) )#,
+  # bottom = grid::textGrob("lambda scalers", gp=gpar(fontsize=15)))
+  
+  
+  
+  p <- grid.arrange(g1, g2, g3, g4, g5, g6, legend, legend_undersmoothing,
+                    layout_matrix = rbind(c(1,NA),
+                                          c(2,NA),
+                                          c(3,8),
+                                          c(4,7),
+                                          c(5,NA),
+                                          c(6,NA)),
+                    widths=c(13, 1), 
+                    top = textGrob("HAL-based plug-in estimator performances for E[Y|a,W] \n", 
+                                   gp=gpar(fontsize=18)))  
+  
+  if(!is.na(save_plot)){
+    ggsave(save_plot, plot=p, width = 25, height = 9, dpi = 500)
+  }
+  
+  return(p)
+}
+
+
+
+
+plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA, save_plot=NA, max_bias_sd=NA){
+  
+  df_a = df[df$a == a, ]
+  
+  legend_undersmoothing = ggplot(df_a) +  
+    geom_line(aes(x = lambda_scaler, y = y_hat, color = "Undersmooth"), lty=2) + 
+    geom_line(aes(x = lambda_scaler, y = y_hat, color = "CV"), lty=2) + 
+    theme_bw() +
+    scale_colour_manual(name="Selector",
+                        values=c(Undersmooth="deepskyblue", CV="purple")) #, Local="#619CFF",
+  legend_undersmoothing <- get_legend(legend_undersmoothing)
+  
+  
+  p_est_avg = ggplot(df_a) +  
+    geom_ribbon(aes(x = lambda, ymin=ci_lwr, ymax=ci_upr, color='Delta', fill = 'Delta'),  alpha=0.5) +
+    geom_ribbon(aes(x = lambda, ymin=oracal_ci_lwr, ymax=oracal_ci_upr,  color='Oracal', fill = 'Oracal'),  alpha=0.5) +
+    geom_line(aes(x = lambda, y = y_hat), color = "grey") + 
+    geom_point(aes(x = lambda, y = y_hat)) + 
+    geom_hline(aes(yintercept=psi0)) + 
+    # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+    scale_color_manual(breaks=c('Oracal', 'Delta'),
+                       values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+    scale_fill_manual(breaks=c('Oracal', 'Delta'),
+                      values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+    theme_bw() +
+    labs(x = "Penalty", y = "Outcome", title = "(a) Estimations & 95% CIs") +
+    theme(axis.title=element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          legend.position='none')
+  
+  
+  p_bias <- ggplot(df_a, aes(x = lambda, y = bias)) +  
+    geom_line(color = "grey") + 
+    geom_point() + 
+    # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+    theme_bw()+
+    theme(axis.title=element_blank()) + 
+    labs(x="Penalty", y = "|Bias|", title="(e) Absolute Bias") 
+  
+  p_se <- ggplot(df_a, aes(x = lambda)) +  
+    geom_line(aes(y = SE, color='Delta')) + 
+    geom_point(aes(y = SE, color='Delta')) + 
+    geom_line(aes(y = oracal_SE, color='Oracal')) + 
+    geom_point(aes(y = oracal_SE, color='Oracal')) +
+    # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+    scale_color_manual(name='Method',
+                       breaks=c('Oracal', 'Delta'),
+                       values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+    theme_bw()+
+    theme(axis.title=element_blank()) + 
+    labs(x="Penalty", y = "SE", title="(f) Standard Error") 
+  
+  legend <- get_legend(p_se)
+  p_se <- p_se + theme(legend.position='none')
+  
+  p_mse <- ggplot(df_a, aes(x = lambda)) +  
+    geom_line(aes(y = MSE, color='Delta')) + 
+    geom_point(aes(y = MSE, color='Delta')) + 
+    geom_line(aes(y = oracal_MSE, color='Oracal')) + 
+    geom_point(aes(y = oracal_MSE, color='Oracal')) +
+    # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+    scale_color_manual(name='Method',
+                       breaks=c('Oracal', 'Delta'),
+                       values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+    theme_bw()+
+    theme(axis.title=element_blank()) +
+    theme(legend.position='none') + 
+    labs(x="Penalty", y = "MSE", title="(d) Mean Squared Error") 
+  
+  p_bias_se <- ggplot(df_a, aes(x = lambda)) + 
+    geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
+    geom_point(aes(y = bias_se_ratio, color = "Delta")) +
+    geom_line(aes(y = oracal_bias_se_ratio, color = "Oracal")) + 
+    geom_point(aes(y = oracal_bias_se_ratio, color = "Oracal")) +
+    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+    scale_color_manual(name='Method',
+                       breaks=c('Oracal', 'Delta'),
+                       values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+    # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+    theme_bw() +
+    theme(axis.title=element_blank(),
+          legend.position='none') + 
+    labs(x="Penalty", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") 
+  
+  if(!is.na(max_bias_sd)){
+    p_bias_se <- p_bias_se + ylim(0,max_bias_sd)
+  }
+  
+  p_cr <- ggplot(df_a, aes(x = lambda)) +  
+    geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=0.95,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
+    geom_line(aes(y = cover_rate, color = "Delta")) + 
+    geom_point(aes(y = cover_rate, color = "Delta")) + 
+    geom_line(aes(y = oracal_cover_rate, color = "Oracal")) + 
+    geom_point(aes(y = oracal_cover_rate, color = "Oracal")) +
+    scale_color_manual(name='Method',
+                       breaks=c('Oracal', 'Delta'),
+                       values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+    # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+    scale_y_continuous(limits = c(0, 1)) +
+    theme_bw()  + 
+    theme(axis.title=element_blank(),
+          legend.position='none') +
+    labs(x="Penalty", y = "Coverage Rate", title="(b) 95% CI Coverage Rate") 
+  
+  if(! is.na(u_g_scaler) ){
+    p_est_avg <- p_est_avg +      
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+    
+    p_bias <- p_bias +      
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+    
+    p_se <- p_se +      
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+    
+    p_mse <- p_mse +      
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+    
+    p_bias_se <- p_bias_se +      
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+    
+    p_cr <- p_cr +      
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+    
+  }
+  
+  
+  p <- grid.arrange(p_est_avg, p_cr,  p_bias_se,   
+                    p_bias, p_se, p_mse, 
+                    legend_undersmoothing, legend,
+                    layout_matrix = rbind(c(1,1,2,2,3,3,NA),
+                                          c(1,1,2,2,3,3,7),
+                                          c(4,4,5,5,6,6,8),
+                                          c(4,4,5,5,6,6,NA))
+  )
+  
+  if(!is.na(save_plot)){
+    ggsave(save_plot, plot=p, width = 10, height = 5, dpi = 800)
+  }
+  
+  return(p)
 }
 
 
