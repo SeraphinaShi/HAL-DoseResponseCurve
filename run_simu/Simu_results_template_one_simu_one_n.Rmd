@@ -4,12 +4,13 @@
 ```{r}
 load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_zero.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
+results_0$result_summary <- rename_df(results_0$result_summary)
 
 results_0$result_summary = add_bound(results_0$result_summary)
-
 rslt_sum_zero = results_0$result_summary
+
 rslt_sum_zero$MSE = rslt_sum_zero$bias^2 + rslt_sum_zero$SE^2
-rslt_sum_zero$oracal_MSE = rslt_sum_zero$bias^2 + rslt_sum_zero$oracal_SE^2
+rslt_sum_zero$oracle_MSE = rslt_sum_zero$bias^2 + rslt_sum_zero$oracle_SE^2
 
 cv_lambda = unique(rslt_sum_zero$lambda[rslt_sum_zero$method == 'CV'])
 u_g_lambda = unique(rslt_sum_zero$lambda[rslt_sum_zero$method == 'U_G'])
@@ -71,12 +72,13 @@ ggsave(save_plot, plot=p, width = 12, height = 3, dpi = 800)
 ```{r fig.width=7, fig.height=14}
 load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
+results_adapt$result_summary <- rename_df(results_adapt$result_summary)
 
 # results_adapt = smoothness_adaptive_HAL_summary(results_adapt$result_list)
 results_adapt$result_summary = add_bound(results_adapt$result_summary)
 
 results_adapt$result_summary$MSE = results_adapt$result_summary$bias^2 + results_adapt$result_summary$SE^2
-results_adapt$result_summary$oracal_MSE = results_adapt$result_summary$bias^2 + results_adapt$result_summary$oracal_SE^2
+results_adapt$result_summary$oracle_MSE = results_adapt$result_summary$bias^2 + results_adapt$result_summary$oracle_SE^2
 
 p <- plot_performences_adapt(df = results_adapt$result_summary,
                              save_plot=here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_adapt_performences.png")))
@@ -132,10 +134,11 @@ ggsave(here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_adapt_cv_r
 ```{r}
 load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
+results_1$result_summary <- rename_df(results_1$result_summary)
 
 results_1$result_summary = add_bound(results_1$result_summary)
 results_1$result_summary$MSE = results_1$result_summary$bias^2 + results_1$result_summary$SE^2
-results_1$result_summary$oracal_MSE = results_1$result_summary$bias^2 + results_1$result_summary$oracal_SE^2
+results_1$result_summary$oracle_MSE = results_1$result_summary$bias^2 + results_1$result_summary$oracle_SE^2
 
 rslt_sum = results_1$result_summary
 
@@ -182,15 +185,12 @@ load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_grid.RData")))
 
 source(here("run_simu", "simu_visual_functions.R"))
 
-results_grid$result_summary = add_bound(results_grid$result_summary)
-
 results_grid_s <- results_grid_summary(results_grid)
+results_grid_s <- rename_df(results_grid_s)
 results_grid_s = add_bound(results_grid_s)
 
 results_grid_s$MSE = results_grid_s$bias^2 + results_grid_s$SE^2
-results_grid_s$oracal_MSE = results_grid_s$bias^2 + results_grid_s$oracal_SE^2
-
-results_grid_s$method[results_grid_s$method == "U_G"] = "Undersmooth"
+results_grid_s$oracle_MSE = results_grid_s$bias^2 + results_grid_s$oracle_SE^2
 
 p <- plot_perforences_grid(results_grid_s,
                            u_g_scaler=u_g_scaler, 
@@ -235,13 +235,14 @@ ggsave(here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_grid_num_b
 load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_grid_extra.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
 
-results_grid_extra$result_summary = add_bound(results_grid_extra$result_summary)
-results_grid_extra$result_summary$method[results_grid_extra$method == "U_G"] = "Undersmooth"
-
-results_grid_all <- results_grid_extra$result_summary
+results_grid_all <- results_grid_summary(results_grid_extra)
+results_grid_all <- rename_df(results_grid_all)
+results_grid_all = add_bound(results_grid_all)
+results_grid_all$method[results_grid_all$method == "U_G"] = "Undersmooth"
 
 results_grid_all$MSE = results_grid_all$bias^2 + results_grid_all$SE^2
-results_grid_all$oracal_MSE = results_grid_all$bias^2 + results_grid_all$oracal_SE^2
+results_grid_all$oracle_MSE = results_grid_all$bias^2 + results_grid_all$oracle_SE^2
+results_grid_all$lambda = results_grid_all$lambda_scaler * mean(results_grid_all$lambda[results_grid_all$lambda_scaler == 1])
 
 p <- plot_perforences_grid(results_grid_all,
                            u_g_scaler=u_g_scaler, 
@@ -257,7 +258,9 @@ p <- plot_perforences_grid_lambda(results_grid_all,
                                                   cv_lambda = cv_lambda,
                                                   save_plot=here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", nn, "_grid_performences_extra_lambda.png")),
                                                   max_bias_sd=NA )
+```
 
+```{r fig.height=5, fig.width=10}
 p <- plot_perforences_grid_lambda_a(results_grid_all,
                                                   a = 1,
                                                   u_g_lambda = u_g_lambda, 
@@ -294,6 +297,10 @@ results_df1$method = "0_HAL"
 results_df2 = results_adapt$result_summary[results_adapt$result_summary$method == "U_HAL_SL_pick", ]
 results_df2$method = "U_SOadapt_HAL"
 
+results_gam$result_summary <- rename_df(results_gam$result_summary)
+results_poly$result_summary <- rename_df(results_poly$result_summary)
+results_npcausal$result_summary <- rename_df(results_npcausal$result_summary)
+
 colnames_overlap = intersect( intersect(names(results_df1), names(results_df2)), names(results_poly$result_summary))
 
 results_all <- rbind(results_gam$result_summary[, colnames_overlap], 
@@ -302,12 +309,11 @@ results_all <- rbind(results_gam$result_summary[, colnames_overlap],
                      results_df1[, colnames_overlap],
                      results_df2[, colnames_overlap])
 
+
 results_all = add_bound(results_all)
 
 results_all$MSE = results_all$bias^2 + results_all$SE^2
-results_all$oracal_MSE = results_all$bias^2 + results_all$oracal_SE^2
-
-
+results_all$oracle_MSE = results_all$bias^2 + results_all$oracle_SE^2
 ```
 
 

@@ -1,3 +1,11 @@
+rename_df <- function(df){
+  columns_to_rename <- grep("^oracal", names(df), value = TRUE)
+  new_names <- sub("^oracal", "oracle", columns_to_rename)
+  names(df)[names(df) %in% columns_to_rename] <- new_names
+  
+  return(df)
+}
+
 add_bound <- function(summary_df){
   
   bounds = c(0,1)
@@ -11,12 +19,12 @@ add_bound <- function(summary_df){
   summary_df$ci_upr = pmax(bounds[1], summary_df$ci_upr)
   summary_df$ci_upr <- pmin(summary_df$ci_upr, bounds[2])
   
-  if("oracal_ci_lwr" %in% names(summary_df)){
-    summary_df$oracal_ci_lwr <- pmax(bounds[1], summary_df$oracal_ci_lwr)
-    summary_df$oracal_ci_lwr <- pmin(summary_df$oracal_ci_lwr, bounds[2])
+  if("oracle_ci_lwr" %in% names(summary_df)){
+    summary_df$oracle_ci_lwr <- pmax(bounds[1], summary_df$oracle_ci_lwr)
+    summary_df$oracle_ci_lwr <- pmin(summary_df$oracle_ci_lwr, bounds[2])
     
-    summary_df$oracal_ci_upr = pmax(bounds[1], summary_df$oracal_ci_upr)
-    summary_df$oracal_ci_upr <- pmin(summary_df$oracal_ci_upr, bounds[2])
+    summary_df$oracle_ci_upr = pmax(bounds[1], summary_df$oracle_ci_upr)
+    summary_df$oracle_ci_upr <- pmin(summary_df$oracle_ci_upr, bounds[2])
   }
   
   return(summary_df)
@@ -42,15 +50,15 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
                        breaks=c('CV', 'Undersmooth'),
                        values=c('CV'=color_cv, 'Undersmooth'=color_u_g)) +
     scale_linetype_manual(name='Method',
-                          breaks=c('Oracal', 'Delta'),
-                          values=c('Oracal'=1, 'Delta'=5)) +
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
     theme_bw()+
     theme(legend.position='none') 
   
   p_est_avg <- ggplot(data=df, aes(x=a)) +
     geom_line(aes(y=psi0), alpha = 0.5, color="darkgrey") +
     geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, color=method, fill=method, linetype='Delta'),  alpha=0.1) +
-    geom_ribbon(aes(ymin=oracal_ci_lwr, ymax=oracal_ci_upr, color=method, fill=method, linetype = "Oracal"),  width=0.7, alpha=0.1) +
+    geom_ribbon(aes(ymin=oracle_ci_lwr, ymax=oracle_ci_upr, color=method, fill=method, linetype = "Oracle"),  width=0.7, alpha=0.1) +
     geom_point(aes(y=psi0), color = "black") +
     geom_point(aes(y=y_hat, color=method), shape=17, size=2, alpha= 0.7) +
     labs(x="Treatment", y="Outcome", title = "(a) Estimations & 95% CIs") +
@@ -59,8 +67,8 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
                        breaks=c('CV', 'Undersmooth'),
                        values=c('CV'=color_cv, 'Undersmooth'=color_u_g)) +
     scale_linetype_manual(name='Method',
-                          breaks=c('Oracal', 'Delta'),
-                          values=c('Oracal'=1, 'Delta'=5)) +
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
     theme_bw() +
     theme(legend.box = "horizontal",
           legend.position='none')
@@ -69,13 +77,13 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
     return(p_est_avg)
   }
   
-  ymin_cr = max(0.95, min(df$cover_rate, df$oracal_cover_rate))
+  ymin_cr = max(0.95, min(df$cover_rate, df$oracle_cover_rate))
   p_cr <- ggplot(df, aes(x = a)) +  
     geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=ymin_cr,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
     geom_line(aes(y = cover_rate, color=method, linetype='Delta'), alpha=0.7) +
     geom_point(aes(y = cover_rate, color=method, linetype='Delta'), alpha=0.7) + 
-    geom_line(aes(y = oracal_cover_rate, color=method, linetype='Oracal'), alpha=0.7) +
-    geom_point(aes(y = oracal_cover_rate, color=method, linetype='Oracal'), alpha=0.7) + 
+    geom_line(aes(y = oracle_cover_rate, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = oracle_cover_rate, color=method, linetype='Oracle'), alpha=0.7) + 
     labs(x="Treatment", y = "Coverage Rate", title="(b) 95% CI Coverage Rate") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_y_continuous(limits = c(0, 1)) +
@@ -83,8 +91,8 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
                        breaks=c('CV', 'Undersmooth'),
                        values=c('CV'=color_cv, 'Undersmooth'=color_u_g)) +
     scale_linetype_manual(name='Method',
-                          breaks=c('Oracal', 'Delta'),
-                          values=c('Oracal'=1, 'Delta'=5)) +
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
     theme_bw() +
     theme(legend.position='none') 
   
@@ -95,16 +103,16 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
   p_bias_se <- ggplot(df, aes(x = a)) +  
     geom_line(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
     geom_point(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) + 
-    geom_line(aes(y = oracal_bias_se_ratio, color=method, linetype='Oracal'), alpha=0.7) +
-    geom_point(aes(y = oracal_bias_se_ratio, color=method, linetype='Oracal'), alpha=0.7) + 
+    geom_line(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
     labs(x="Treatment", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Selector',
                        breaks=c('CV', 'Undersmooth'),
                        values=c('CV'=color_cv, 'Undersmooth'=color_u_g)) +
     scale_linetype_manual(name='Method',
-                          breaks=c('Oracal', 'Delta'),
-                          values=c('Oracal'=1, 'Delta'=5)) +
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
     theme_bw() +
     theme(legend.position='none') 
   if (return_plot == "p_bias_se"){
@@ -114,16 +122,16 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
   p_mse <- ggplot(df, aes(x = a)) +  
     geom_line(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) +
     geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
-    geom_line(aes(y = oracal_MSE, color=method, linetype='Oracal'),alpha=0.7) +
-    geom_point(aes(y = oracal_MSE, color=method, linetype='Oracal'),alpha=0.7) + 
+    geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
+    geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
     labs(x="Treatment", y = "MSE", title="(d) Mean Squared Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Selector',
                        breaks=c('CV', 'Undersmooth'),
                        values=c('CV'=color_cv, 'Undersmooth'=color_u_g)) +
     scale_linetype_manual(name='Method',
-                          breaks=c('Oracal', 'Delta'),
-                          values=c('Oracal'=1, 'Delta'=5)) +
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
     theme_bw() + 
     theme(legend.position='none')
   
@@ -148,16 +156,16 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
     p_se <- ggplot(df, aes(x = a)) +  
       geom_line(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) +
       geom_point(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) + 
-      geom_line(aes(y = oracal_SE, color=method, linetype='Oracal'),alpha=0.7) +
-      geom_point(aes(y = oracal_SE, color=method, linetype='Oracal'),alpha=0.7) + 
+      geom_line(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) +
+      geom_point(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) + 
       labs(x="Treatment", y = "SE", title="(f) Standard Error") +
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_color_manual(name='Selector',
                          breaks=c('CV', 'Undersmooth'),
                          values=c('CV'=color_cv, 'Undersmooth'=color_u_g)) +
       scale_linetype_manual(name='Method',
-                            breaks=c('Oracal', 'Delta'),
-                            values=c('Oracal'=1, 'Delta'=5)) +
+                            breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() 
     
     legend <- get_legend(p_se)
@@ -168,16 +176,16 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
   p_se <- ggplot(df, aes(x = a)) +  
     geom_line(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) +
     geom_point(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) + 
-    geom_line(aes(y = oracal_SE, color=method, linetype='Oracal'),alpha=0.7) +
-    geom_point(aes(y = oracal_SE, color=method, linetype='Oracal'),alpha=0.7) + 
+    geom_line(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) +
+    geom_point(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) + 
     labs(x="Treatment", y = "SE", title="(f) Standard Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Selector',
                        breaks=c('CV', 'Undersmooth'),
                        values=c('CV'=color_cv, 'Undersmooth'=color_u_g)) +
     scale_linetype_manual(name='Method',
-                          breaks=c('Oracal', 'Delta'),
-                          values=c('Oracal'=1, 'Delta'=5)) +
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
     theme_bw() 
     # theme(legend.box = "horizontal")
   
@@ -287,7 +295,7 @@ plot_performences_adapt <- function(df, save_plot=NA){
   
   p_est_avg_o <- ggplot(data=df, aes(x=a)) +
     geom_line(aes(y=psi0), alpha = 0.5, color="darkgrey") +
-    geom_ribbon(aes(ymin=oracal_ci_lwr, ymax=oracal_ci_upr, color=smooth_order, fill=smooth_order, linetype=if_n_knots_default),  alpha=0.1) +
+    geom_ribbon(aes(ymin=oracle_ci_lwr, ymax=oracle_ci_upr, color=smooth_order, fill=smooth_order, linetype=if_n_knots_default),  alpha=0.1) +
     geom_point(aes(y=psi0), color = "black") +
     geom_point(aes(y=y_hat, color=smooth_order), shape=17, size=2, alpha= 0.7) +
     labs(x="Treatment", y="Outcome", title = "(a) Estimations & 95% CIs") +                
@@ -322,11 +330,11 @@ plot_performences_adapt <- function(df, save_plot=NA){
     theme_bw() +
     theme(legend.position='none') 
   
-  ymin_cr_o = max(0.95, min(df$oracal_cover_rate))
+  ymin_cr_o = max(0.95, min(df$oracle_cover_rate))
   p_cr_o <- ggplot(df, aes(x = a)) +  
     geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=ymin_cr_o,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
-    geom_line(aes(y = oracal_cover_rate, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) +
-    geom_point(aes(y = oracal_cover_rate, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) + 
+    geom_line(aes(y = oracle_cover_rate, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) +
+    geom_point(aes(y = oracle_cover_rate, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) + 
     labs(x="Treatment", y = "Coverage Rate", title="(b) 95% CI Coverage Rate") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_y_continuous(limits = c(0, 1)) +
@@ -356,9 +364,9 @@ plot_performences_adapt <- function(df, save_plot=NA){
     theme(legend.position='none')
   
   p_mse_o <- ggplot(df, aes(x = a)) +  
-    geom_line(aes(y = oracal_MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
-    geom_point(aes(y = oracal_MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
-    # labs(title="Standard Error, Oracal") +
+    geom_line(aes(y = oracle_MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
+    geom_point(aes(y = oracle_MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
+    # labs(title="Standard Error, Oracle") +
     labs(x="Treatment", y = "MSE", title="(d) Mean Squared Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='smooth order',
@@ -405,9 +413,9 @@ plot_performences_adapt <- function(df, save_plot=NA){
   p_se_e <- p_se_e + theme(legend.position='none')
   
   p_se_o <- ggplot(df, aes(x = a)) +  
-    geom_line(aes(y = oracal_SE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
-    geom_point(aes(y = oracal_SE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
-    # 0labs(title="Standard Error, Oracal") +
+    geom_line(aes(y = oracle_SE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
+    geom_point(aes(y = oracle_SE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
+    # 0labs(title="Standard Error, Oracle") +
     labs(x="Treatment", y = "SE", title="(f) Standard Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='smooth order',
@@ -435,8 +443,8 @@ plot_performences_adapt <- function(df, save_plot=NA){
   
   
   p_bias_se_o <- ggplot(df, aes(x = a)) +  
-    geom_line(aes(y = oracal_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) +
-    geom_point(aes(y = oracal_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) + 
+    geom_line(aes(y = oracle_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) +
+    geom_point(aes(y = oracle_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) + 
     labs(x="Treatment", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='smooth order',
@@ -508,15 +516,15 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     
     p_est_avg = ggplot(df_a) +  
       geom_ribbon(aes(x = lambda_scaler, ymin=ci_lwr, ymax=ci_upr, color='Delta', fill = 'Delta'),  alpha=0.5) +
-      geom_ribbon(aes(x = lambda_scaler, ymin=oracal_ci_lwr, ymax=oracal_ci_upr,  color='Oracal', fill = 'Oracal'),  alpha=0.5) +
+      geom_ribbon(aes(x = lambda_scaler, ymin=oracle_ci_lwr, ymax=oracle_ci_upr,  color='Oracle', fill = 'Oracle'),  alpha=0.5) +
       geom_line(aes(x = lambda_scaler, y = y_hat), color = "grey") + 
       geom_point(aes(x = lambda_scaler, y = y_hat)) + 
       geom_hline(aes(yintercept=psi0)) + 
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
-      scale_color_manual(breaks=c('Oracal', 'Delta'),
-                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
-      scale_fill_manual(breaks=c('Oracal', 'Delta'),
-                        values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      scale_color_manual(breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      scale_fill_manual(breaks=c('Oracle', 'Delta'),
+                        values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
       theme_bw() +
       labs(x = "", title = paste0('a = ', curve_pnts[i])) +
       theme(axis.title=element_blank(),
@@ -534,12 +542,12 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     p_se <- ggplot(df_a, aes(x = lambda_scaler)) +  
       geom_line(aes(y = SE, color='Delta')) + 
       geom_point(aes(y = SE, color='Delta')) + 
-      geom_line(aes(y = oracal_SE, color='Oracal')) + 
-      geom_point(aes(y = oracal_SE, color='Oracal')) +
+      geom_line(aes(y = oracle_SE, color='Oracle')) + 
+      geom_point(aes(y = oracle_SE, color='Oracle')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
-                         breaks=c('Oracal', 'Delta'),
-                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
       theme_bw()+
       theme(axis.title=element_blank())
     
@@ -549,12 +557,12 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     p_mse <- ggplot(df_a, aes(x = lambda_scaler)) +  
       geom_line(aes(y = MSE, color='Delta')) + 
       geom_point(aes(y = MSE, color='Delta')) + 
-      geom_line(aes(y = oracal_MSE, color='Oracal')) + 
-      geom_point(aes(y = oracal_MSE, color='Oracal')) +
+      geom_line(aes(y = oracle_MSE, color='Oracle')) + 
+      geom_point(aes(y = oracle_MSE, color='Oracle')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
-                         breaks=c('Oracal', 'Delta'),
-                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
       theme_bw()+
       theme(axis.title=element_blank()) +
       theme(legend.position='none')
@@ -562,12 +570,12 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     p_bias_se <- ggplot(df_a, aes(x = lambda_scaler)) + 
       geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
       geom_point(aes(y = bias_se_ratio, color = "Delta")) +
-      geom_line(aes(y = oracal_bias_se_ratio, color = "Oracal")) + 
-      geom_point(aes(y = oracal_bias_se_ratio, color = "Oracal")) +
+      geom_line(aes(y = oracle_bias_se_ratio, color = "Oracle")) + 
+      geom_point(aes(y = oracle_bias_se_ratio, color = "Oracle")) +
       geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
       scale_color_manual(name='Method',
-                         breaks=c('Oracal', 'Delta'),
-                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       theme_bw() +
       theme(axis.title=element_blank(),
@@ -581,11 +589,11 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=0.95,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
       geom_line(aes(y = cover_rate, color = "Delta")) + 
       geom_point(aes(y = cover_rate, color = "Delta")) + 
-      geom_line(aes(y = oracal_cover_rate, color = "Oracal")) + 
-      geom_point(aes(y = oracal_cover_rate, color = "Oracal")) +
+      geom_line(aes(y = oracle_cover_rate, color = "Oracle")) + 
+      geom_point(aes(y = oracle_cover_rate, color = "Oracle")) +
       scale_color_manual(name='Method',
-                         breaks=c('Oracal', 'Delta'),
-                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_y_continuous(limits = c(0, 1)) +
       theme_bw()  + 
@@ -680,11 +688,11 @@ results_grid_summary <- function(results_grid_in){
              # cover_rate_bt = as.numeric(ci_lwr_bt <= psi0 & psi0 <= ci_upr_bt) ,
              cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr)) %>%
       group_by(a) %>%
-      mutate(oracal_SE = sqrt(var(y_hat)),
-             oracal_bias_se_ratio = bias / oracal_SE,
-             oracal_ci_lwr = y_hat - 1.96 * oracal_SE,
-             oracal_ci_upr = y_hat + 1.96 * oracal_SE,
-             oracal_cover_rate = as.numeric(oracal_ci_lwr <= psi0 & psi0 <= oracal_ci_upr)) %>%
+      mutate(oracle_SE = sqrt(var(y_hat)),
+             oracle_bias_se_ratio = bias / oracle_SE,
+             oracle_ci_lwr = y_hat - 1.96 * oracle_SE,
+             oracle_ci_upr = y_hat + 1.96 * oracle_SE,
+             oracle_cover_rate = as.numeric(oracle_ci_lwr <= psi0 & psi0 <= oracle_ci_upr)) %>%
       summarise(across(where(is.numeric), mean)) %>%
       ungroup() %>%
       mutate(hal_fit_time_unit = 'secs',
@@ -715,8 +723,8 @@ plot_compare_methods_estimations <- function(df, save_plot=NA){
   a_max <- max(df$a)
   
   #-------------------------------------------------
-  ci_min = min(df$ci_lwr, df$oracal_ci_lwr)
-  ci_max = max(df$ci_upr, df$oracal_ci_upr)
+  ci_min = min(df$ci_lwr, df$oracle_ci_lwr)
+  ci_max = max(df$ci_upr, df$oracle_ci_upr)
   
   p_est_avg <- list()
   for(i in 1:2){
@@ -734,8 +742,8 @@ plot_compare_methods_estimations <- function(df, save_plot=NA){
       scale_fill_manual(name='Method',
                         breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
                         values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
-      scale_linetype_manual(breaks=c('Oracal', 'Delta'),
-                            values=c('Oracal'=1, 'Delta'=5)) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
       theme(legend.box = "horizontal", legend.position='none',
             plot.title = element_text(hjust = 0.5)) 
@@ -743,8 +751,8 @@ plot_compare_methods_estimations <- function(df, save_plot=NA){
   
   p_est_avg[[1]] <- p_est_avg[[1]] + geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, color=method, fill=method, linetype='Delta'),  alpha=0.1) +
     labs(title = "(a.1) Estimations & 95% CIs [Delta]" , y="Outcome", x = "Treatment")
-  p_est_avg[[2]] <- p_est_avg[[2]] + geom_ribbon(aes(ymin=oracal_ci_lwr, ymax=oracal_ci_upr, color=method, fill=method, linetype = "Oracal"),  width=0.7, alpha=0.1) +
-    labs(title = "(a.2) Estimations & 95% CIs [Oracal]" , y="Outcome", x = "Treatment")
+  p_est_avg[[2]] <- p_est_avg[[2]] + geom_ribbon(aes(ymin=oracle_ci_lwr, ymax=oracle_ci_upr, color=method, fill=method, linetype = "Oracle"),  width=0.7, alpha=0.1) +
+    labs(title = "(a.2) Estimations & 95% CIs [Oracle]" , y="Outcome", x = "Treatment")
   
   #-------------------------------------------------
   p_bias <- ggplot(df, aes(x = a, y = bias)) +  
@@ -773,7 +781,7 @@ plot_compare_methods_estimations <- function(df, save_plot=NA){
     p1_tmp = p_est_avg[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
     p2_tmp = p_est_avg[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
     ggsave( paste0(gsub(".png", "", save_plot), "_est_delta.png"), plot=p1_tmp, width = 4, height = 3, dpi = 800)
-    ggsave( paste0(gsub(".png", "", save_plot), "_est_oracal.png"), plot=p2_tmp, width = 4, height = 3, dpi = 800)
+    ggsave( paste0(gsub(".png", "", save_plot), "_est_oracle.png"), plot=p2_tmp, width = 4, height = 3, dpi = 800)
     
   }
   
@@ -792,8 +800,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   a_max <- max(df$a)
   
   #-------------------------------------------------
-  ci_min = min(df$ci_lwr, df$oracal_ci_lwr)
-  ci_max = max(df$ci_upr, df$oracal_ci_upr)
+  ci_min = min(df$ci_lwr, df$oracle_ci_lwr)
+  ci_max = max(df$ci_upr, df$oracle_ci_upr)
   
   p_est_avg <- list()
   for(i in 1:2){
@@ -811,8 +819,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_fill_manual(name='Method',
                         breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
                         values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
-      scale_linetype_manual(breaks=c('Oracal', 'Delta'),
-                            values=c('Oracal'=1, 'Delta'=5)) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
       theme(legend.box = "horizontal", legend.position='none',
             plot.title = element_text(hjust = 0.5)) 
@@ -820,8 +828,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   
   p_est_avg[[1]] <- p_est_avg[[1]] + geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, color=method, fill=method, linetype='Delta'),  alpha=0.1) +
     labs(title = "(a.1) Estimations & 95% CIs [Delta]" , y="Outcome", x = "Treatment")
-  p_est_avg[[2]] <- p_est_avg[[2]] + geom_ribbon(aes(ymin=oracal_ci_lwr, ymax=oracal_ci_upr, color=method, fill=method, linetype = "Oracal"),  width=0.7, alpha=0.1) +
-    labs(title = "(a.2) Estimations & 95% CIs [Oracal]" , y="Outcome", x = "Treatment")
+  p_est_avg[[2]] <- p_est_avg[[2]] + geom_ribbon(aes(ymin=oracle_ci_lwr, ymax=oracle_ci_upr, color=method, fill=method, linetype = "Oracle"),  width=0.7, alpha=0.1) +
+    labs(title = "(a.2) Estimations & 95% CIs [Oracle]" , y="Outcome", x = "Treatment")
   
   #-------------------------------------------------
   p_bias <- ggplot(df, aes(x = a, y = bias)) +  
@@ -839,8 +847,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   
   
   #-------------------------------------------------
-  se_min = min(df$SE, df$oracal_SE)
-  se_max = max(df$SE, df$oracal_SE)
+  se_min = min(df$SE, df$oracle_SE)
+  se_max = max(df$SE, df$oracle_SE)
   
   p_se <- list()
   
@@ -849,9 +857,9 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
     geom_point(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) + 
     labs(title = "(c.1) SE [Delta]", y = "SE")
   p_se[[2]] <- ggplot(df, aes(x = a)) +  
-    geom_line(aes(y = oracal_SE, color=method, linetype='Oracal'),alpha=0.7) +
-    geom_point(aes(y = oracal_SE, color=method, linetype='Oracal'),alpha=0.7) + 
-    labs(title = "(c.2) SE [Oracal]", y = "")
+    geom_line(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) +
+    geom_point(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) + 
+    labs(title = "(c.2) SE [Oracle]", y = "")
   
   for(i in 1:2){
     p_se[[i]] <- p_se[[i]] +
@@ -861,16 +869,16 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_color_manual(name='Method',
                          breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
                          values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
-      scale_linetype_manual(breaks=c('Oracal', 'Delta'),
-                            values=c('Oracal'=1, 'Delta'=5)) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
       theme(legend.box = "horizontal", legend.position='none',
             plot.title = element_text(hjust = 0.5))
   }
   
   #-------------------------------------------------
-  mse_min = min(df$MSE, df$oracal_MSE)
-  mse_max = max(df$MSE, df$oracal_MSE)
+  mse_min = min(df$MSE, df$oracle_MSE)
+  mse_max = max(df$MSE, df$oracle_MSE)
   
   p_mse <- list()
   
@@ -879,9 +887,9 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
     geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
     labs(title = "(d.1) MSE [Delta]", y = "MSE")
   p_mse[[2]] <- ggplot(df, aes(x = a)) +  
-    geom_line(aes(y = oracal_MSE, color=method, linetype='Oracal'),alpha=0.7) +
-    geom_point(aes(y = oracal_MSE, color=method, linetype='Oracal'),alpha=0.7) + 
-    labs(title = "(d.2) MSE [Oracal]", y = "")
+    geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
+    geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
+    labs(title = "(d.2) MSE [Oracle]", y = "")
   
   for(i in 1:2){
     p_mse[[i]] <- p_mse[[i]] +
@@ -891,16 +899,16 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_color_manual(name='Method',
                          breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
                          values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
-      scale_linetype_manual(breaks=c('Oracal', 'Delta'),
-                            values=c('Oracal'=1, 'Delta'=5)) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
       theme(legend.box = "horizontal", legend.position='none',
             plot.title = element_text(hjust = 0.5))
   }
   
   #-------------------------------------------------
-  bias_se_min = min(df$bias_se_ratio, df$oracal_bias_se_ratio)
-  bias_se_max = max(df$bias_se_ratio, df$oracal_bias_se_ratio)
+  bias_se_min = min(df$bias_se_ratio, df$oracle_bias_se_ratio)
+  bias_se_max = max(df$bias_se_ratio, df$oracle_bias_se_ratio)
   
   p_bias_sd <- list()
   
@@ -910,9 +918,9 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
     labs(y = "|Bias| / Standard Error", title = "(e.1) Bias-SE Ratio [Delta]") 
   
   p_bias_sd[[2]] <- ggplot(df, aes(x = a)) +  
-    geom_line(aes(y = oracal_bias_se_ratio, color=method, linetype='Oracal'), alpha=0.7) +
-    geom_point(aes(y = oracal_bias_se_ratio, color=method, linetype='Oracal'), alpha=0.7) + 
-    labs(y="", title = "(e.1) Bias-SE Ratio [Oracal]") 
+    geom_line(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
+    labs(y="", title = "(e.1) Bias-SE Ratio [Oracle]") 
   
   for(i in 1:2){
     p_bias_sd[[i]] <- p_bias_sd[[i]] +  
@@ -921,8 +929,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_color_manual(name='Method',
                          breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
                          values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
-      scale_linetype_manual(breaks=c('Oracal', 'Delta'),
-                            values=c('Oracal'=1, 'Delta'=5)) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
       theme(legend.position='none') 
   }
@@ -937,12 +945,12 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
     geom_point(aes(y = cover_rate, color=method, linetype='Delta'), alpha=0.7) + 
     labs(y="95% CI Coverage Rate", title = "(f.1) CI Coverage Rate [Delta]")
   
-  ymin_cr_o = max(0.95, min(df$oracal_cover_rate))
+  ymin_cr_o = max(0.95, min(df$oracle_cover_rate))
   p_cr[[2]] <- ggplot(df, aes(x = a)) +  
     geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=ymin_cr_o,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
-    geom_line(aes(y = oracal_cover_rate, color=method, linetype='Oracal'), alpha=0.7) +
-    geom_point(aes(y = oracal_cover_rate, color=method, linetype='Oracal'), alpha=0.7) + 
-    labs(y = "", title = "(f.1) CI Coverage Rate [Oracal]")
+    geom_line(aes(y = oracle_cover_rate, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = oracle_cover_rate, color=method, linetype='Oracle'), alpha=0.7) + 
+    labs(y = "", title = "(f.1) CI Coverage Rate [Oracle]")
   
   for (i in 1:2) {
     p_cr[[i]] <- p_cr[[i]] +
@@ -952,8 +960,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_color_manual(name='Method',
                          breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
                          values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
-      scale_linetype_manual(breaks=c('Oracal', 'Delta'),
-                            values=c('Oracal'=1, 'Delta'=5)) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
       theme(legend.position='none') 
   }
@@ -1045,15 +1053,15 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
     
     p_est_avg = ggplot(df_a) +  
       geom_ribbon(aes(x = lambda, ymin=ci_lwr, ymax=ci_upr, color='Delta', fill = 'Delta'),  alpha=0.5) +
-      geom_ribbon(aes(x = lambda, ymin=oracal_ci_lwr, ymax=oracal_ci_upr,  color='Oracal', fill = 'Oracal'),  alpha=0.5) +
+      geom_ribbon(aes(x = lambda, ymin=oracle_ci_lwr, ymax=oracle_ci_upr,  color='Oracle', fill = 'Oracle'),  alpha=0.5) +
       geom_line(aes(x = lambda, y = y_hat), color = "grey") + 
       geom_point(aes(x = lambda, y = y_hat)) + 
       geom_hline(aes(yintercept=psi0)) + 
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
-      scale_color_manual(breaks=c('Oracal', 'Delta'),
-                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
-      scale_fill_manual(breaks=c('Oracal', 'Delta'),
-                        values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      scale_color_manual(breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+      scale_fill_manual(breaks=c('Oracle', 'Delta'),
+                        values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
       theme_bw() +
       labs(x = "", title = paste0('a = ', curve_pnts[i])) +
       theme(axis.title=element_blank(),
@@ -1071,12 +1079,12 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
     p_se <- ggplot(df_a, aes(x = lambda)) +  
       geom_line(aes(y = SE, color='Delta')) + 
       geom_point(aes(y = SE, color='Delta')) + 
-      geom_line(aes(y = oracal_SE, color='Oracal')) + 
-      geom_point(aes(y = oracal_SE, color='Oracal')) +
+      geom_line(aes(y = oracle_SE, color='Oracle')) + 
+      geom_point(aes(y = oracle_SE, color='Oracle')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
-                         breaks=c('Oracal', 'Delta'),
-                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
       theme_bw()+
       theme(axis.title=element_blank())
     
@@ -1086,12 +1094,12 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
     p_mse <- ggplot(df_a, aes(x = lambda)) +  
       geom_line(aes(y = MSE, color='Delta')) + 
       geom_point(aes(y = MSE, color='Delta')) + 
-      geom_line(aes(y = oracal_MSE, color='Oracal')) + 
-      geom_point(aes(y = oracal_MSE, color='Oracal')) +
+      geom_line(aes(y = oracle_MSE, color='Oracle')) + 
+      geom_point(aes(y = oracle_MSE, color='Oracle')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
-                         breaks=c('Oracal', 'Delta'),
-                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
       theme_bw()+
       theme(axis.title=element_blank()) +
       theme(legend.position='none')
@@ -1099,12 +1107,12 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
     p_bias_se <- ggplot(df_a, aes(x = lambda)) + 
       geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
       geom_point(aes(y = bias_se_ratio, color = "Delta")) +
-      geom_line(aes(y = oracal_bias_se_ratio, color = "Oracal")) + 
-      geom_point(aes(y = oracal_bias_se_ratio, color = "Oracal")) +
+      geom_line(aes(y = oracle_bias_se_ratio, color = "Oracle")) + 
+      geom_point(aes(y = oracle_bias_se_ratio, color = "Oracle")) +
       geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
       scale_color_manual(name='Method',
-                         breaks=c('Oracal', 'Delta'),
-                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       theme_bw() +
       theme(axis.title=element_blank(),
@@ -1118,11 +1126,11 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
       geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=0.95,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
       geom_line(aes(y = cover_rate, color = "Delta")) + 
       geom_point(aes(y = cover_rate, color = "Delta")) + 
-      geom_line(aes(y = oracal_cover_rate, color = "Oracal")) + 
-      geom_point(aes(y = oracal_cover_rate, color = "Oracal")) +
+      geom_line(aes(y = oracle_cover_rate, color = "Oracle")) + 
+      geom_point(aes(y = oracle_cover_rate, color = "Oracle")) +
       scale_color_manual(name='Method',
-                         breaks=c('Oracal', 'Delta'),
-                         values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_y_continuous(limits = c(0, 1)) +
       theme_bw()  + 
@@ -1211,15 +1219,15 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
   
   p_est_avg = ggplot(df_a) +  
     geom_ribbon(aes(x = lambda, ymin=ci_lwr, ymax=ci_upr, color='Delta', fill = 'Delta'),  alpha=0.5) +
-    geom_ribbon(aes(x = lambda, ymin=oracal_ci_lwr, ymax=oracal_ci_upr,  color='Oracal', fill = 'Oracal'),  alpha=0.5) +
+    geom_ribbon(aes(x = lambda, ymin=oracle_ci_lwr, ymax=oracle_ci_upr,  color='Oracle', fill = 'Oracle'),  alpha=0.5) +
     geom_line(aes(x = lambda, y = y_hat), color = "grey") + 
     geom_point(aes(x = lambda, y = y_hat)) + 
     geom_hline(aes(yintercept=psi0)) + 
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
-    scale_color_manual(breaks=c('Oracal', 'Delta'),
-                       values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
-    scale_fill_manual(breaks=c('Oracal', 'Delta'),
-                      values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+    scale_color_manual(breaks=c('Oracle', 'Delta'),
+                       values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+    scale_fill_manual(breaks=c('Oracle', 'Delta'),
+                      values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
     theme_bw() +
     labs(x = "Penalty", y = "Outcome", title = "(a) Estimations & 95% CIs") +
     theme(axis.title=element_blank(),
@@ -1238,12 +1246,12 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
   p_se <- ggplot(df_a, aes(x = lambda)) +  
     geom_line(aes(y = SE, color='Delta')) + 
     geom_point(aes(y = SE, color='Delta')) + 
-    geom_line(aes(y = oracal_SE, color='Oracal')) + 
-    geom_point(aes(y = oracal_SE, color='Oracal')) +
+    geom_line(aes(y = oracle_SE, color='Oracle')) + 
+    geom_point(aes(y = oracle_SE, color='Oracle')) +
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     scale_color_manual(name='Method',
-                       breaks=c('Oracal', 'Delta'),
-                       values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                       breaks=c('Oracle', 'Delta'),
+                       values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
     theme_bw()+
     theme(axis.title=element_blank()) + 
     labs(x="Penalty", y = "SE", title="(f) Standard Error") 
@@ -1254,12 +1262,12 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
   p_mse <- ggplot(df_a, aes(x = lambda)) +  
     geom_line(aes(y = MSE, color='Delta')) + 
     geom_point(aes(y = MSE, color='Delta')) + 
-    geom_line(aes(y = oracal_MSE, color='Oracal')) + 
-    geom_point(aes(y = oracal_MSE, color='Oracal')) +
+    geom_line(aes(y = oracle_MSE, color='Oracle')) + 
+    geom_point(aes(y = oracle_MSE, color='Oracle')) +
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     scale_color_manual(name='Method',
-                       breaks=c('Oracal', 'Delta'),
-                       values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                       breaks=c('Oracle', 'Delta'),
+                       values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
     theme_bw()+
     theme(axis.title=element_blank()) +
     theme(legend.position='none') + 
@@ -1268,12 +1276,12 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
   p_bias_se <- ggplot(df_a, aes(x = lambda)) + 
     geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
     geom_point(aes(y = bias_se_ratio, color = "Delta")) +
-    geom_line(aes(y = oracal_bias_se_ratio, color = "Oracal")) + 
-    geom_point(aes(y = oracal_bias_se_ratio, color = "Oracal")) +
+    geom_line(aes(y = oracle_bias_se_ratio, color = "Oracle")) + 
+    geom_point(aes(y = oracle_bias_se_ratio, color = "Oracle")) +
     geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
     scale_color_manual(name='Method',
-                       breaks=c('Oracal', 'Delta'),
-                       values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                       breaks=c('Oracle', 'Delta'),
+                       values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     theme_bw() +
     theme(axis.title=element_blank(),
@@ -1288,11 +1296,11 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
     geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=0.95,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
     geom_line(aes(y = cover_rate, color = "Delta")) + 
     geom_point(aes(y = cover_rate, color = "Delta")) + 
-    geom_line(aes(y = oracal_cover_rate, color = "Oracal")) + 
-    geom_point(aes(y = oracal_cover_rate, color = "Oracal")) +
+    geom_line(aes(y = oracle_cover_rate, color = "Oracle")) + 
+    geom_point(aes(y = oracle_cover_rate, color = "Oracle")) +
     scale_color_manual(name='Method',
-                       breaks=c('Oracal', 'Delta'),
-                       values=c('Oracal'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                       breaks=c('Oracle', 'Delta'),
+                       values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     scale_y_continuous(limits = c(0, 1)) +
     theme_bw()  + 
