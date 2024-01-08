@@ -45,6 +45,7 @@ if(simu.num == 4){
       geom_point(data=psi0_pnt, aes(x=a, y=psi0)) + 
       geom_point(aes(x = 2, y = 0), shape=1) + 
       geom_point(aes(x = 4, y = 1), shape=1) + 
+      ylim(0,1) +
       labs(x="Treatment", y="Outcome",
            title = "Causal Dose–Response Curve") +
           theme(plot.title = element_text(hjust = 0.5),
@@ -55,6 +56,7 @@ if(simu.num == 4){
   ggplot() +
     geom_line(data=psi0_all, aes(x=a, y=psi0)) + 
     geom_point(data=psi0_pnt, aes(x=a, y=psi0)) + 
+    ylim(0,1) +
     labs(x="Treatment", y="Outcome",
            title = "Causal Dose–Response Curve") +
         theme(plot.title = element_text(hjust = 0.5),

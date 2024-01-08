@@ -31,6 +31,63 @@ add_bound <- function(summary_df){
 }
 
 
+
+run_simu_rep_npcausal_summary <- function(results_list, method){
+  
+  result_all <-  do.call("rbind", results_list$all_results) %>% as.data.frame()
+  result_all <- merge(as.data.frame(psi0_pnt), result_all, by=c("a"))
+  
+  result_summary <- result_all %>% 
+    filter(SE != 0, ! is.na(y_hat)) %>% 
+    mutate(SE = SE/sqrt(nn)) %>%
+  mutate(bias = abs(y_hat - psi0),
+         bias_se_ratio = bias / SE,
+         cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr)) %>% 
+    group_by(a) %>% 
+    mutate(oracal_SE = sqrt(var(y_hat)),
+           oracal_bias_se_ratio = bias / oracal_SE,
+           oracal_ci_lwr = y_hat - 1.96 * oracal_SE,
+           oracal_ci_upr = y_hat + 1.96 * oracal_SE,
+           oracal_cover_rate = as.numeric(oracal_ci_lwr <= psi0 & psi0 <= oracal_ci_upr)) %>%
+    summarise(across(where(is.numeric), mean)) %>% 
+    ungroup() %>%
+    mutate(method = method)
+  
+  results <- list(result_summary = result_summary,
+                  all_results = results_list$all_results)
+  
+  return(results)
+}
+
+run_simu_rep_GAM_poly_summary <- function(results_list, method){
+  
+  result_all <-  do.call("rbind", results_list$all_results) %>% as.data.frame()
+  result_all <- merge(as.data.frame(psi0_pnt), result_all, by=c("a"))
+  
+  result_summary <- result_all %>% 
+    filter(SE != 0) %>% 
+    mutate(bias = abs(y_hat - psi0),
+           bias_se_ratio = bias / SE,
+           cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr)) %>% 
+    group_by(a) %>% 
+    mutate(oracal_SE = sqrt(var(y_hat)),
+           oracal_bias_se_ratio = bias / oracal_SE,
+           oracal_ci_lwr = y_hat - 1.96 * oracal_SE,
+           oracal_ci_upr = y_hat + 1.96 * oracal_SE,
+           oracal_cover_rate = as.numeric(oracal_ci_lwr <= psi0 & psi0 <= oracal_ci_upr)) %>%
+    summarise(across(where(is.numeric), mean)) %>% 
+    ungroup() %>%
+    mutate(method = method)
+  
+  
+  results <- list(result_summary = result_summary,
+                  all_results = results_list$all_results)
+  
+  
+  return(results)
+}
+
+
 plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
   
   color_cv =  "#F8766D"
@@ -100,13 +157,16 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
     return(p_cr)
   }
   
-  p_bias_se <- ggplot(df, aes(x = a)) +  
+  df_bias_se <- df[! df$a %in% c(0,5), ]
+  p_bias_se <- ggplot(df_bias_se, aes(x = a)) +  
+    xlim(0,5) +
     geom_line(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
     geom_point(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) + 
     geom_line(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
     geom_point(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
     labs(x="Treatment", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
     scale_color_manual(name='Selector',
                        breaks=c('CV', 'Undersmooth'),
                        values=c('CV'=color_cv, 'Undersmooth'=color_u_g)) +
@@ -124,7 +184,7 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
     geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
     geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
     geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
-    labs(x="Treatment", y = "MSE", title="(d) Mean Squared Error") + 
+    labs(x="Treatment", y = "MSE", title="(f) Mean Squared Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Selector',
                        breaks=c('CV', 'Undersmooth'),
@@ -143,7 +203,7 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
   p_bias <- ggplot(df, aes(x = a, y = bias)) +  
     geom_line(aes(color=method)) +
     geom_point(aes(color=method)) + 
-    labs(x="Treatment", y = "|Bias|", title="(e) Absolute Bias") +
+    labs(x="Treatment", y = "|Bias|", title="(d) Absolute Bias") +
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Selector',
                        breaks=c('CV', 'Undersmooth'),
@@ -158,7 +218,7 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
       geom_point(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) + 
       geom_line(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) +
       geom_point(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) + 
-      labs(x="Treatment", y = "SE", title="(f) Standard Error") +
+      labs(x="Treatment", y = "SE", title="(e) Standard Error") +
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_color_manual(name='Selector',
                          breaks=c('CV', 'Undersmooth'),
@@ -178,7 +238,7 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
     geom_point(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) + 
     geom_line(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) +
     geom_point(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) + 
-    labs(x="Treatment", y = "SE", title="(f) Standard Error") + 
+    labs(x="Treatment", y = "SE", title="(e) Standard Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Selector',
                        breaks=c('CV', 'Undersmooth'),
@@ -198,7 +258,7 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
 
   
   
-  p <- grid.arrange(p_est_avg, p_cr, p_bias_se, p_mse, p_bias, p_se,  legend,
+  p <- grid.arrange(p_est_avg, p_cr, p_bias_se,  p_bias, p_se, p_mse, legend,
                     layout_matrix = rbind(c(1,1,2,2,3,3,NA),
                                           c(1,1,2,2,3,3,7),
                                           c(4,4,5,5,6,6,7),
@@ -206,9 +266,13 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
                     # top = textGrob(paste0("HAL-based plug-in estimator performences"), gp=gpar(fontsize=17))
                     )
 
-  if(!is.na(save_plot)){
-    ggsave(save_plot, plot=p, width = 10, height = 5, dpi = 800)
+  if(!any(is.na(save_plot))){
+    for (i in 1:length(save_plot)) {
+      save_loc <- save_plot[i]
+      ggsave(save_loc, plot=p, width = 10, height = 5, dpi = 800)
+    }
   }
+  
   return(p)
   
 }
@@ -237,8 +301,12 @@ estimation_qqplot_cv_ug_alla <- function(results_list, save_plot=NA){
           axis.title = element_text(size=14),
           strip.text = element_text(size = 12))
   
-  if(!is.na(save_plot)){
-    ggsave(save_plot, plot=p, width = 12, height = 4, dpi = 800)
+
+  if(!any(is.na(save_plot))){
+    for (i in 1:length(save_plot)) {
+      save_loc <- save_plot[i]
+      ggsave(save_loc, plot=p, width = 12, height = 4, dpi = 800)
+    }
   }
   
   return(p)
@@ -351,7 +419,7 @@ plot_performences_adapt <- function(df, save_plot=NA){
     geom_line(aes(y = MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
     geom_point(aes(y = MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) + 
     # labs(title="Standard Error, Delta-method") +
-    labs(x="Treatment", y = "MSE", title="(d) Mean Squared Error") + 
+    labs(x="Treatment", y = "MSE", title="(f) Mean Squared Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     theme_bw() + 
     guides(color = guide_legend(nrow = 3, byrow = F)) +
@@ -367,7 +435,7 @@ plot_performences_adapt <- function(df, save_plot=NA){
     geom_line(aes(y = oracle_MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
     geom_point(aes(y = oracle_MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
     # labs(title="Standard Error, Oracle") +
-    labs(x="Treatment", y = "MSE", title="(d) Mean Squared Error") + 
+    labs(x="Treatment", y = "MSE", title="(f) Mean Squared Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='smooth order',
                        breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
@@ -381,7 +449,7 @@ plot_performences_adapt <- function(df, save_plot=NA){
   p_bias <- ggplot(df, aes(x = a, y = bias, color=smooth_order, linetype=if_n_knots_default)) +  
     geom_line() +
     geom_point() + 
-    labs(x="Treatment", y = "|Bias|", title="(e) Absolute Bias") + 
+    labs(x="Treatment", y = "|Bias|", title="(d) Absolute Bias") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     theme_bw() +
     theme(legend.position='none') + 
@@ -396,7 +464,7 @@ plot_performences_adapt <- function(df, save_plot=NA){
     geom_line(aes(y = SE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
     geom_point(aes(y = SE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) + 
     # labs(title="Standard Error, Delta-method") +
-    labs(x="Treatment", y = "SE", title="(f) Standard Error") + 
+    labs(x="Treatment", y = "SE", title="(e) Standard Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     theme_bw() + 
     theme(legend.box = "horizontal") +
@@ -416,7 +484,7 @@ plot_performences_adapt <- function(df, save_plot=NA){
     geom_line(aes(y = oracle_SE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
     geom_point(aes(y = oracle_SE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
     # 0labs(title="Standard Error, Oracle") +
-    labs(x="Treatment", y = "SE", title="(f) Standard Error") + 
+    labs(x="Treatment", y = "SE", title="(e) Standard Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='smooth order',
                        breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
@@ -427,9 +495,12 @@ plot_performences_adapt <- function(df, save_plot=NA){
     theme_bw() + 
     theme(legend.position='none')
   
-  p_bias_se_e <- ggplot(df, aes(x = a)) +  
+  df_bias_se <- df[! df$a %in% c(0,5), ]
+  p_bias_se_e <- ggplot(df_bias_se, aes(x = a)) +  
+    xlim(0,5) +
     geom_line(aes(y = bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) +
     geom_point(aes(y = bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) + 
+    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
     labs(x="Treatment", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='smooth order',
@@ -440,11 +511,12 @@ plot_performences_adapt <- function(df, save_plot=NA){
                           values=line_types)  +
     theme_bw() +
     theme(legend.position='none') 
-  
-  
-  p_bias_se_o <- ggplot(df, aes(x = a)) +  
+
+  p_bias_se_o <- ggplot(df_bias_se, aes(x = a)) +  
+    xlim(0,5) +
     geom_line(aes(y = oracle_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) +
     geom_point(aes(y = oracle_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) + 
+    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
     labs(x="Treatment", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='smooth order',
@@ -458,11 +530,10 @@ plot_performences_adapt <- function(df, save_plot=NA){
   
   p <- grid.arrange(p_est_avg_e, p_est_avg_o, 
                     p_cr_e, p_cr_o,
-                    p_mse_e, p_mse_o,
                     p_bias_se_e, p_bias_se_o,
                     p_bias, legend,
                     p_se_e, p_se_o, 
-                    
+                    p_mse_e, p_mse_o,
                     layout_matrix = rbind(c(1,1,2,2),
                                           c(1,1,2,2),
                                           c(3,3,4,4),
@@ -478,8 +549,11 @@ plot_performences_adapt <- function(df, save_plot=NA){
                     top = textGrob(paste0("   Delta-Method                               Oracle    \n"), 
                                    gp=gpar(fontsize=17)))
   
-  if(!is.na(save_plot)){
-    ggsave(save_plot, plot=p, width = 7, height = 14, dpi = 800)
+  if(!any(is.na(save_plot))){
+    for (i in 1:length(save_plot)) {
+      save_loc <- save_plot[i]
+      ggsave(save_loc, plot=p, width = 7, height = 14, dpi = 800)
+    }
   }
   return(p)
   
@@ -566,7 +640,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       theme_bw()+
       theme(axis.title=element_blank()) +
       theme(legend.position='none')
-    
+      
     p_bias_se <- ggplot(df_a, aes(x = lambda_scaler)) + 
       geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
       geom_point(aes(y = bias_se_ratio, color = "Delta")) +
@@ -646,7 +720,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
   
   
   
-  p <- grid.arrange(g1, g2, g3, g4, g5, g6, legend, legend_undersmoothing,
+  p <- grid.arrange(g1, g6,  g5, g2, g3, g4,legend, legend_undersmoothing,
                     layout_matrix = rbind(c(1,NA),
                                           c(2,NA),
                                           c(3,8),
@@ -654,11 +728,14 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
                                           c(5,NA),
                                           c(6,NA)),
                     widths=c(13, 1), 
-                    top = textGrob("HAL-based plug-in estimator performances for E[Y|a,W] \n", 
+                    top = textGrob("HAL-based plug-in estimator performances \n", 
                                    gp=gpar(fontsize=18)))  
   
-  if(!is.na(save_plot)){
-    ggsave(save_plot, plot=p, width = 25, height = 9, dpi = 500)
+  if(!any(is.na(save_plot))){
+    for (i in 1:length(save_plot)) {
+      save_loc <- save_plot[i]
+      ggsave(save_loc, plot=p, width = 25, height = 9, dpi = 800)
+    }
   }
   
   return(p)
@@ -712,81 +789,6 @@ results_grid_summary <- function(results_grid_in){
 }
 
 
-plot_compare_methods_estimations <- function(df, save_plot=NA){
-  
-  color_0_hal = '#619CFF'
-  color_u_adapt = "#85c876"
-  color_gam = '#f7b722'
-  color_poly = '#ef9db6'
-  color_npcausal =  "blueviolet"
-
-  a_max <- max(df$a)
-  
-  #-------------------------------------------------
-  ci_min = min(df$ci_lwr, df$oracle_ci_lwr)
-  ci_max = max(df$ci_upr, df$oracle_ci_upr)
-  
-  p_est_avg <- list()
-  for(i in 1:2){
-    p_est_avg[[i]] <- ggplot(data=df, aes(x=a)) +
-      geom_line(aes(y=psi0), alpha = 0.5, color="darkgrey") +
-      geom_point(aes(y=psi0), color = "black") + 
-      geom_point(aes(y=y_hat, color=method), shape=17, size=2, alpha= 0.7) +
-      labs(x="a") +
-      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
-      scale_y_continuous(limits = c(ci_min, ci_max)) + 
-      
-      scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
-      scale_fill_manual(name='Method',
-                        breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
-                        values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
-      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
-                            values=c('Oracle'=1, 'Delta'=5)) +
-      theme_bw() +
-      theme(legend.box = "horizontal", legend.position='none',
-            plot.title = element_text(hjust = 0.5)) 
-  }
-  
-  p_est_avg[[1]] <- p_est_avg[[1]] + geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, color=method, fill=method, linetype='Delta'),  alpha=0.1) +
-    labs(title = "(a.1) Estimations & 95% CIs [Delta]" , y="Outcome", x = "Treatment")
-  p_est_avg[[2]] <- p_est_avg[[2]] + geom_ribbon(aes(ymin=oracle_ci_lwr, ymax=oracle_ci_upr, color=method, fill=method, linetype = "Oracle"),  width=0.7, alpha=0.1) +
-    labs(title = "(a.2) Estimations & 95% CIs [Oracle]" , y="Outcome", x = "Treatment")
-  
-  #-------------------------------------------------
-  p_bias <- ggplot(df, aes(x = a, y = bias)) +  
-    geom_line(aes(color=method)) +
-    geom_point(aes(color=method)) + 
-    labs(title="|Bias|", x="a", y="|bias|") +
-    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
-    scale_color_manual(name='Method',
-                       breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
-                       values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
-    theme_bw()
-  
-  legend <- get_legend(p_bias)
-  p_bias <- p_bias + theme(legend.position='none')
-  
-  #-------------------------------------------------
-  p <- grid.arrange(p_est_avg[[1]], p_est_avg[[2]], legend, 
-                    nrow = 1,
-                    widths = c(1,1,0.4),
-                    top = textGrob(paste0("Estimated values and 95% CI \nbased on zero-HAL, U-HAL, GAM, polynomial regression, and np"), 
-                                   gp=gpar(fontsize=17)))
-  
-  if(!is.na(save_plot)){
-    ggsave(save_plot, plot=p, width = 9, height = 4, dpi = 800)
-    
-    p1_tmp = p_est_avg[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-    p2_tmp = p_est_avg[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_est_delta.png"), plot=p1_tmp, width = 4, height = 3, dpi = 800)
-    ggsave( paste0(gsub(".png", "", save_plot), "_est_oracle.png"), plot=p2_tmp, width = 4, height = 3, dpi = 800)
-    
-  }
-  
-}
-
 plot_compare_methods_performances <- function(df, save_plot=NA){
   
   color_0_hal = '#619CFF'
@@ -822,8 +824,7 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
-      theme(legend.box = "horizontal", legend.position='none',
-            plot.title = element_text(hjust = 0.5)) 
+      theme(legend.box = "horizontal", legend.position='none') 
   }
   
   p_est_avg[[1]] <- p_est_avg[[1]] + geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, color=method, fill=method, linetype='Delta'),  alpha=0.1) +
@@ -835,7 +836,7 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   p_bias <- ggplot(df, aes(x = a, y = bias)) +  
     geom_line(aes(color=method)) +
     geom_point(aes(color=method)) + 
-    labs(title="(b) Absolute Bias", x="Treatment", y="|Bias|") +
+    labs(title="(d) Absolute Bias", x="Treatment", y="|Bias|") +
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Method',
                        breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
@@ -855,11 +856,11 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   p_se[[1]] <- ggplot(df, aes(x = a)) +  
     geom_line(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) +
     geom_point(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) + 
-    labs(title = "(c.1) SE [Delta]", y = "SE")
+    labs(title = "(e.1) SE [Delta]", y = "SE")
   p_se[[2]] <- ggplot(df, aes(x = a)) +  
     geom_line(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) +
     geom_point(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) + 
-    labs(title = "(c.2) SE [Oracle]", y = "")
+    labs(title = "(e.2) SE [Oracle]", y = "")
   
   for(i in 1:2){
     p_se[[i]] <- p_se[[i]] +
@@ -872,8 +873,7 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
-      theme(legend.box = "horizontal", legend.position='none',
-            plot.title = element_text(hjust = 0.5))
+      theme(legend.box = "horizontal", legend.position='none')
   }
   
   #-------------------------------------------------
@@ -885,11 +885,11 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   p_mse[[1]] <- ggplot(df, aes(x = a)) +  
     geom_line(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) +
     geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
-    labs(title = "(d.1) MSE [Delta]", y = "MSE")
+    labs(title = "(f.1) MSE [Delta]", y = "MSE")
   p_mse[[2]] <- ggplot(df, aes(x = a)) +  
     geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
     geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
-    labs(title = "(d.2) MSE [Oracle]", y = "")
+    labs(title = "(f.2) MSE [Oracle]", y = "")
   
   for(i in 1:2){
     p_mse[[i]] <- p_mse[[i]] +
@@ -902,8 +902,7 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
-      theme(legend.box = "horizontal", legend.position='none',
-            plot.title = element_text(hjust = 0.5))
+      theme(legend.box = "horizontal", legend.position='none')
   }
   
   #-------------------------------------------------
@@ -912,15 +911,20 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   
   p_bias_sd <- list()
   
-  p_bias_sd[[1]] <- ggplot(df, aes(x = a)) +  
+  df_bias_se <- df[! df$a %in% c(0,5), ]
+  p_bias_sd[[1]] <- ggplot(df_bias_se, aes(x = a)) +  
+    xlim(0,5) +
     geom_line(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
     geom_point(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
-    labs(y = "|Bias| / Standard Error", title = "(e.1) Bias-SE Ratio [Delta]") 
+    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+    labs(y = "|Bias| / Standard Error", title = "(c.1) Bias-SE Ratio [Delta]") 
   
-  p_bias_sd[[2]] <- ggplot(df, aes(x = a)) +  
+  p_bias_sd[[2]] <- ggplot(df_bias_se, aes(x = a)) +  
+    xlim(0,5) +
     geom_line(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
     geom_point(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
-    labs(y="", title = "(e.1) Bias-SE Ratio [Oracle]") 
+    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+    labs(y="", title = "(c.1) Bias-SE Ratio [Oracle]") 
   
   for(i in 1:2){
     p_bias_sd[[i]] <- p_bias_sd[[i]] +  
@@ -943,14 +947,14 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
     geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=ymin_cr_e,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
     geom_line(aes(y = cover_rate, color=method, linetype='Delta'), alpha=0.7) +
     geom_point(aes(y = cover_rate, color=method, linetype='Delta'), alpha=0.7) + 
-    labs(y="95% CI Coverage Rate", title = "(f.1) CI Coverage Rate [Delta]")
+    labs(y="95% CI Coverage Rate", title = "(b.1) CI Coverage Rate [Delta]")
   
   ymin_cr_o = max(0.95, min(df$oracle_cover_rate))
   p_cr[[2]] <- ggplot(df, aes(x = a)) +  
     geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=ymin_cr_o,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
     geom_line(aes(y = oracle_cover_rate, color=method, linetype='Oracle'), alpha=0.7) +
     geom_point(aes(y = oracle_cover_rate, color=method, linetype='Oracle'), alpha=0.7) + 
-    labs(y = "", title = "(f.1) CI Coverage Rate [Oracle]")
+    labs(y = "", title = "(b.1) CI Coverage Rate [Oracle]")
   
   for (i in 1:2) {
     p_cr[[i]] <- p_cr[[i]] +
@@ -969,57 +973,298 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   
   #-------------------------------------------------
   p <- grid.arrange(p_est_avg[[1]], p_est_avg[[2]],
+                    p_cr[[1]], p_cr[[2]], 
+                    p_bias_sd[[1]], p_bias_sd[[2]], 
                     p_bias, legend, 
                     p_se[[1]], p_se[[2]], 
                     p_mse[[1]], p_mse[[2]],
-                    p_bias_sd[[1]], p_bias_sd[[2]], 
-                    p_cr[[1]], p_cr[[2]], 
                     ncol=2, 
                     top = textGrob(paste0("Compare Methods"), 
                                    gp=gpar(fontsize=17)))
   
-  if(!is.na(save_plot)){
-    ggsave(save_plot, plot=p, width = 8, height = 15, dpi = 800)
-    
-    p_1 = p_est_avg[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_est_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
-    
-    p_2 = p_est_avg[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_est_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
-    
-    p_bias = p_bias + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_bias.png"), plot=p_bias, width = 4, height = 3, dpi = 800)
-    
-    p_1 = p_se[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_se_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
-    
-    p_2 = p_se[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_se_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
-    
-    p_1 = p_mse[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_mse_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
-    
-    p_2 = p_mse[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_mse_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
-    
-    p_1 = p_bias_sd[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_bias_sd_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
-    
-    p_2 = p_bias_sd[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_bias_sd_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
-    
-    p_1 = p_cr[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_cr_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
-    
-    p_2 = p_cr[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-    ggsave( paste0(gsub(".png", "", save_plot), "_cr_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
-    
+
+  if(!any(is.na(save_plot))){
+    for (i in 1:length(save_plot)) {
+      save_loc <- save_plot[i]
+      ggsave(save_loc, plot=p, width = 8, height = 15, dpi = 800)
+      
+      p_1 = p_est_avg[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_est_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
+      
+      p_2 = p_est_avg[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_est_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
+      
+      p_bias = p_bias + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_bias.png"), plot=p_bias, width = 4, height = 3, dpi = 800)
+      
+      p_1 = p_se[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_se_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
+      
+      p_2 = p_se[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_se_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
+      
+      p_1 = p_mse[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_mse_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
+      
+      p_2 = p_mse[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_mse_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
+      
+      p_1 = p_bias_sd[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_bias_sd_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
+      
+      p_2 = p_bias_sd[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_bias_sd_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
+      
+      p_1 = p_cr[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_cr_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
+      
+      p_2 = p_cr[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_cr_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
+      
+    }
   }
-   
+  
+  
   return(p)
   
 }
 
+
+plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
+  
+  color_u_adapt = "#85c876"
+  color_npcausal =  "blueviolet"
+  
+  df <- df[df$method %in% c("U_SOadapt_HAL", "npcausal"), ]
+  
+  a_max <- max(df$a)
+  
+  #-------------------------------------------------
+  ci_min = min(df$ci_lwr, df$oracle_ci_lwr)
+  ci_max = max(df$ci_upr, df$oracle_ci_upr)
+  
+  p_est_avg <- list()
+  for(i in 1:2){
+    p_est_avg[[i]] <- ggplot(data=df, aes(x=a)) +
+      geom_line(aes(y=psi0), alpha = 0.5, color="darkgrey") +
+      geom_point(aes(y=psi0), color = "black") + 
+      geom_point(aes(y=y_hat, color=method), shape=17, size=2, alpha= 0.7) +
+      labs(x="a") +
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      scale_y_continuous(limits = c(ci_min, ci_max)) + 
+      scale_color_manual(name='Method',
+                         breaks=c('U_SOadapt_HAL', 'npcausal'),
+                         values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+      scale_fill_manual(name='Method',
+                        breaks=c('U_SOadapt_HAL', 'npcausal'),
+                        values=c('U_SOadapt_HAL'=color_u_adapt,  'npcausal'=color_npcausal )) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
+      theme_bw() +
+      theme(legend.box = "horizontal", legend.position='none') 
+  }
+  
+  p_est_avg[[1]] <- p_est_avg[[1]] + geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, color=method, fill=method, linetype='Delta'),  alpha=0.1) +
+    labs(title = "(a.1) Estimations & 95% CIs [Delta]" , y="Outcome", x = "Treatment")
+  p_est_avg[[2]] <- p_est_avg[[2]] + geom_ribbon(aes(ymin=oracle_ci_lwr, ymax=oracle_ci_upr, color=method, fill=method, linetype = "Oracle"),  width=0.7, alpha=0.1) +
+    labs(title = "(a.2) Estimations & 95% CIs [Oracle]" , y="Outcome", x = "Treatment")
+  
+  #-------------------------------------------------
+  p_bias <- ggplot(df, aes(x = a, y = bias)) +  
+    geom_line(aes(color=method)) +
+    geom_point(aes(color=method)) + 
+    labs(title="(d) Absolute Bias", x="Treatment", y="|Bias|") +
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    scale_color_manual(name='Method',
+                       breaks=c('U_SOadapt_HAL', 'npcausal'),
+                       values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+    theme_bw()
+  
+  legend <- get_legend(p_bias)
+  p_bias <- p_bias + theme(legend.position='none')
+  
+  
+  #-------------------------------------------------
+  se_min = min(df$SE, df$oracle_SE)
+  se_max = max(df$SE, df$oracle_SE)
+  
+  p_se <- list()
+  
+  p_se[[1]] <- ggplot(df, aes(x = a)) +  
+    geom_line(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) +
+    geom_point(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) + 
+    labs(title = "(e.1) SE [Delta]", y = "SE")
+  p_se[[2]] <- ggplot(df, aes(x = a)) +  
+    geom_line(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) +
+    geom_point(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) + 
+    labs(title = "(e.2) SE [Oracle]", y = "")
+  
+  for(i in 1:2){
+    p_se[[i]] <- p_se[[i]] +
+      labs(x="Treatment") +
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      # scale_y_continuous(limits = c(se_min, se_max)) +
+      scale_color_manual(name='Method',
+                         breaks=c('U_SOadapt_HAL', 'npcausal'),
+                         values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
+      theme_bw() + 
+      theme(legend.box = "horizontal", legend.position='none')
+  }
+  
+  #-------------------------------------------------
+  mse_min = min(df$MSE, df$oracle_MSE)
+  mse_max = max(df$MSE, df$oracle_MSE)
+  
+  p_mse <- list()
+  
+  p_mse[[1]] <- ggplot(df, aes(x = a)) +  
+    geom_line(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) +
+    geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
+    labs(title = "(f.1) MSE [Delta]", y = "MSE")
+  p_mse[[2]] <- ggplot(df, aes(x = a)) +  
+    geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
+    geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
+    labs(title = "(f.2) MSE [Oracle]", y = "")
+  
+  for(i in 1:2){
+    p_mse[[i]] <- p_mse[[i]] +
+      labs(x="Treatment") +
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      # scale_y_continuous(limits = c(se_min, se_max)) +
+      scale_color_manual(name='Method',
+                         breaks=c('U_SOadapt_HAL', 'npcausal'),
+                         values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
+      theme_bw() + 
+      theme(legend.box = "horizontal", legend.position='none')
+  }
+  
+  #-------------------------------------------------
+  bias_se_min = min(df$bias_se_ratio, df$oracle_bias_se_ratio)
+  bias_se_max = max(df$bias_se_ratio, df$oracle_bias_se_ratio)
+  
+  p_bias_sd <- list()
+  
+  df_bias_se <- df[! df$a %in% c(0,5), ]
+    
+  p_bias_sd[[1]] <- ggplot(df_bias_se, aes(x = a)) +  
+    xlim(0,5) +
+    geom_line(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
+    geom_point(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
+    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+    labs(y = "|Bias| / Standard Error", title = "(c.1) Bias-SE Ratio [Delta]") 
+  
+  p_bias_sd[[2]] <- ggplot(df_bias_se, aes(x = a)) +  
+    xlim(0,5) +
+    geom_line(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
+    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+    labs(y="", title = "(c.1) Bias-SE Ratio [Oracle]") 
+  
+  for(i in 1:2){
+    p_bias_sd[[i]] <- p_bias_sd[[i]] +  
+      labs(x='Treatment') +
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      scale_color_manual(name='Method',
+                         breaks=c('U_SOadapt_HAL', 'npcausal'),
+                         values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
+      theme_bw() +
+      theme(legend.position='none') 
+  }
+  
+  #-------------------------------------------------
+  p_cr <- list()
+  
+  ymin_cr_e = max(0.95, min(df$cover_rate))
+  p_cr[[1]] <- ggplot(df, aes(x = a)) +  
+    geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=ymin_cr_e,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
+    geom_line(aes(y = cover_rate, color=method, linetype='Delta'), alpha=0.7) +
+    geom_point(aes(y = cover_rate, color=method, linetype='Delta'), alpha=0.7) + 
+    labs(y="95% CI Coverage Rate", title = "(b.1) CI Coverage Rate [Delta]")
+  
+  ymin_cr_o = max(0.95, min(df$oracle_cover_rate))
+  p_cr[[2]] <- ggplot(df, aes(x = a)) +  
+    geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=ymin_cr_o,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
+    geom_line(aes(y = oracle_cover_rate, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = oracle_cover_rate, color=method, linetype='Oracle'), alpha=0.7) + 
+    labs(y = "", title = "(b.1) CI Coverage Rate [Oracle]")
+  
+  for (i in 1:2) {
+    p_cr[[i]] <- p_cr[[i]] +
+      labs(x='Treatment')+
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      scale_y_continuous(limits = c(0, 1)) +
+      scale_color_manual(name='Method',
+                         breaks=c('U_SOadapt_HAL', 'npcausal'),
+                         values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+      scale_linetype_manual(breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
+      theme_bw() +
+      theme(legend.position='none') 
+  }
+  
+  
+  #-------------------------------------------------
+  p <- grid.arrange(p_est_avg[[1]], p_est_avg[[2]],
+                    p_cr[[1]], p_cr[[2]], 
+                    p_bias_sd[[1]], p_bias_sd[[2]], 
+                    p_bias, legend, 
+                    p_se[[1]], p_se[[2]], 
+                    p_mse[[1]], p_mse[[2]],
+                    ncol=2, 
+                    top = textGrob(paste0("Compare Methods"), 
+                                   gp=gpar(fontsize=17)))
+  
+
+  if(!any(is.na(save_plot))){
+    for (i in 1:length(save_plot)) {
+      save_loc <- save_plot[i]
+      ggsave(save_loc, plot=p, width = 8, height = 15, dpi = 800)
+      
+      p_1 = p_est_avg[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_est_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
+      
+      p_2 = p_est_avg[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_est_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
+      
+      p_bias = p_bias + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_bias.png"), plot=p_bias, width = 4, height = 3, dpi = 800)
+      
+      p_1 = p_se[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_se_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
+      
+      p_2 = p_se[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_se_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
+      
+      p_1 = p_mse[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_mse_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
+      
+      p_2 = p_mse[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_mse_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
+      
+      p_1 = p_bias_sd[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_bias_sd_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
+      
+      p_2 = p_bias_sd[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_bias_sd_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
+      
+      p_1 = p_cr[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_cr_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
+      
+      p_2 = p_cr[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
+      ggsave( paste0(gsub(".png", "", save_loc), "_cr_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
+      
+    }
+  }
+  
+  return(p)
+  
+}
 
 
 
@@ -1104,6 +1349,7 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
       theme(axis.title=element_blank()) +
       theme(legend.position='none')
     
+
     p_bias_se <- ggplot(df_a, aes(x = lambda)) + 
       geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
       geom_point(aes(y = bias_se_ratio, color = "Delta")) +
@@ -1183,7 +1429,7 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
   
   
   
-  p <- grid.arrange(g1, g2, g3, g4, g5, g6, legend, legend_undersmoothing,
+  p <- grid.arrange(g1, g6, g5, g2, g3, g4, legend, legend_undersmoothing,
                     layout_matrix = rbind(c(1,NA),
                                           c(2,NA),
                                           c(3,8),
@@ -1191,11 +1437,15 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
                                           c(5,NA),
                                           c(6,NA)),
                     widths=c(13, 1), 
-                    top = textGrob("HAL-based plug-in estimator performances for E[Y|a,W] \n", 
+                    top = textGrob("HAL-based plug-in estimator performances \n", 
                                    gp=gpar(fontsize=18)))  
   
-  if(!is.na(save_plot)){
-    ggsave(save_plot, plot=p, width = 25, height = 9, dpi = 500)
+
+  if(!any(is.na(save_plot))){
+    for (i in 1:length(save_plot)) {
+      save_loc <- save_plot[i]
+      ggsave(save_loc, plot=p, width = 25, height = 9, dpi = 500)
+    }
   }
   
   return(p)
@@ -1241,7 +1491,7 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     theme_bw()+
     theme(axis.title=element_blank()) + 
-    labs(x="Penalty", y = "|Bias|", title="(e) Absolute Bias") 
+    labs(x="Penalty", y = "|Bias|", title="(d) Absolute Bias") 
   
   p_se <- ggplot(df_a, aes(x = lambda)) +  
     geom_line(aes(y = SE, color='Delta')) + 
@@ -1254,7 +1504,7 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
                        values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
     theme_bw()+
     theme(axis.title=element_blank()) + 
-    labs(x="Penalty", y = "SE", title="(f) Standard Error") 
+    labs(x="Penalty", y = "SE", title="(e) Standard Error") 
   
   legend <- get_legend(p_se)
   p_se <- p_se + theme(legend.position='none')
@@ -1271,7 +1521,7 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
     theme_bw()+
     theme(axis.title=element_blank()) +
     theme(legend.position='none') + 
-    labs(x="Penalty", y = "MSE", title="(d) Mean Squared Error") 
+    labs(x="Penalty", y = "MSE", title="(f) Mean Squared Error") 
   
   p_bias_se <- ggplot(df_a, aes(x = lambda)) + 
     geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
@@ -1345,8 +1595,12 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
                                           c(4,4,5,5,6,6,NA))
   )
   
-  if(!is.na(save_plot)){
-    ggsave(save_plot, plot=p, width = 10, height = 5, dpi = 800)
+
+  if(!any(is.na(save_plot))){
+    for (i in 1:length(save_plot)) {
+      save_loc <- save_plot[i]
+      ggsave(save_loc, plot=p, width = 10, height = 5, dpi = 580)
+    }
   }
   
   return(p)
