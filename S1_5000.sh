@@ -7,6 +7,6 @@
 #$ -M junming_shi@berkeley.edu
 #$ -m base
 
-export SIMU_NUM=1 SAMPLE_N=1000 HALF1=FALSE HALF2=FALSE GRID_EXTRA=TRUE
+export SIMU_NUM=1 SAMPLE_N=5000 HALF1=TRUE HALF2=TRUE GRID_EXTRA=TRUE
 
-R CMD BATCH --no-save run_simu/run_simu.R run_simu/simu_1_1000_gridextra.Rout
+R CMD BATCH --no-save run_simu/run_simu.R run_simu/simu_1_5000.Rout
