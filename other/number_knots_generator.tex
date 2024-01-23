@@ -1,0 +1,99 @@
+
+
+
+###############################################################################
+
+1. num_knots_generator
+https://github.com/tlverse/hal9001/blob/master/R/hal.R#L21 
+
+#' A default generator for the \code{num_knots} argument for each degree of
+#' interactions and the smoothness orders.
+#'
+#' @param max_degree interaction degree.
+#' @param smoothness_orders see \code{\link{fit_hal}}.
+#' @param base_num_knots_0 The base number of knots for zeroth-order smoothness
+#'  basis functions. The number of knots by degree interaction decays as
+#'  `base_num_knots_0/2^(d-1)` where `d` is the interaction degree of the basis
+#'  function.
+#' @param base_num_knots_1 The base number of knots for 1 or greater order
+#'  smoothness basis functions. The number of knots by degree interaction
+#'  decays as `base_num_knots_1/2^(d-1)` where `d` is the interaction degree of
+#'  the basis function.
+#'
+#' @keywords internal
+num_knots_generator <- function(max_degree, smoothness_orders, base_num_knots_0 = 500,
+                                base_num_knots_1 = 200) {
+  if (all(smoothness_orders > 0)) {
+    return(sapply(seq_len(max_degree), function(d) {
+      round(base_num_knots_1 / 2^(d - 1))
+    }))
+  } else {
+    return(sapply(seq_len(max_degree), function(d) {
+      round(base_num_knots_0 / 2^(d - 1))
+    }))
+  }
+}
+
+
+=============================================================================
+
+-------------------------------default: -------------------------------
+num_knots = hal9001:::num_knots_generator(
+                                              max_degree = ifelse(ncol(X) >= 20, 2, 3), 
+                                              smoothness_orders = 0, # or1 or 2 or 3 
+                                              base_num_knots_0 = 500,
+                                              base_num_knots_1 = 200  
+                                            )
+
+num_knots: 
+	Zero order HAL: 
+		500 250 125
+	Higher order HAL:
+		200 100  50
+	
+
+-------------------------------Our smaller set of knots:-------------------------------
+num_knots = hal9001:::num_knots_generator(
+                                              max_degree = ifelse(ncol(X) >= 20, 2, 3), 
+                                              smoothness_orders = 0, # or1 or 2 or 3 
+                                              base_num_knots_0 = 20,
+                                              base_num_knots_1 = 20  
+                                            )
+
+num_knots: 
+	20 10  5
+	
+	
+
+###############################################################################
+
+2. num_knots_generator used in formula_hal() and enumerate_basis()
+
+https://github.com/tlverse/hal9001/blob/master/R/make_basis.R
+
+-> first degree: 20 knots
+-> second degree: 10 knots
+-> third degree: 5 knots
+
+# in function enumerate_basis
+# generate all basis functions up to the specified degree
+  all_bases <- lapply(degrees, function(degree) {
+    if (!is.null(num_knots)) {
+      if (length(num_knots) < degree) {
+        n_bin <- min(num_knots)
+      } else {
+        n_bin <- num_knots[degree]
+      }
+      x <- quantizer(x, n_bin)
+    }
+    return(basis_of_degree(
+      x, degree, smoothness_orders, include_zero_order,
+      include_lower_order
+    ))
+  })
+  
+  
+  
+ 
+  
+	

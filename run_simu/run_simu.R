@@ -5,7 +5,8 @@ n <- Sys.getenv("SAMPLE_N")
 half1 <- Sys.getenv("HALF1")
 half2 <- Sys.getenv("HALF2")
 grid_extra <- Sys.getenv("GRID_EXTRA")
-  
+first_smallKnot <- Sys.getenv("FIRST_SMALLKNOTS")
+
 print(simu.num)
 print(n)
 
@@ -30,7 +31,6 @@ rep.num = 500
 
 eval_points = seq(0,5,0.25)
 
-set.seed(123)
 
 ##========True curve
 psi0_all <- true_curve(simu.num = simu.num, N = 1e+07)
@@ -50,7 +50,7 @@ if(half1){
   ## ------0 order HAL
   set.seed(123)
   
-  results_0 <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, defualt_setting = T)
+  results_0 <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, zero_default = T)
   save.image(file=here("data", "rdata", paste("simu", simu.num, n, "zero.Rdata", sep="_")))
   
   rm(results_0)
@@ -100,4 +100,14 @@ if(grid_extra){
   results_grid_extra <- run_simu_scaled_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, grid_extra = T)
   
   save.image(file=here("data", "rdata", paste("simu", simu.num, n, "grid_extra.Rdata", sep="_")))
+}
+
+if(first_smallKnot){
+  ## ------1st order HAL with smaller knots
+  set.seed(123)
+  
+  results_1_smallKnots <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, base_num_knots = 10)
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "first_smallKnot.Rdata", sep="_")))
+  
+  rm(results_1)
 }

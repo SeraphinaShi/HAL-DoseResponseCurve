@@ -185,7 +185,7 @@ fit_hal_all_criteria <- function(X, Y, y_type, eval_points){
 }
 
 
-fit_hal_CV_U <- function(X, Y, y_type, eval_points){
+fit_hal_CV_U <- function(X, Y, y_type, eval_points, base_num_knots = 20){
   #================================CV-HAL================================
   print("1")
   start <- Sys.time()
@@ -195,8 +195,8 @@ fit_hal_CV_U <- function(X, Y, y_type, eval_points){
                     num_knots = hal9001:::num_knots_generator(
                       max_degree = ifelse(ncol(X) >= 20, 2, 3),
                       smoothness_orders = 1,
-                      base_num_knots_0 = 20,
-                      base_num_knots_1 = 20 # max(100, ceiling(sqrt(n)))
+                      base_num_knots_0 = base_num_knots,
+                      base_num_knots_1 = base_num_knots # max(100, ceiling(sqrt(n)))
                     )
   )
   lambda_CV <- hal_CV$lambda_star
@@ -624,7 +624,7 @@ run_simu_smoothness_adaptive_HAL_1round <- function(simu.num, eval_points, y_typ
 #       - sample size n
 # returns the estimated ATE and empirical 95% CI
 ##############################################################
-run_simu_1round <- function(simu.num, eval_points, y_type, n, defualt_setting = F){
+run_simu_1round <- function(simu.num, eval_points, y_type, n, zero_default = F, base_num_knots = 20){
   
   bootstrap = F
   
@@ -639,11 +639,11 @@ run_simu_1round <- function(simu.num, eval_points, y_type, n, defualt_setting = 
     select(all_of(x_names)) %>% 
     mutate_if(sapply(., is.factor), as.numeric)
   
-  if(defualt_setting){
+  if(zero_default){
     # print("d")
     fit_hal_all_criteria_rslts <- fit_hal_CV_U_0(X, Y, y_type, eval_points)
   } else {
-    fit_hal_all_criteria_rslts <- fit_hal_CV_U(X, Y, y_type, eval_points)
+    fit_hal_all_criteria_rslts <- fit_hal_CV_U(X, Y, y_type, eval_points, base_num_knots)
   }
   
   
@@ -752,7 +752,7 @@ run_simu_1round <- function(simu.num, eval_points, y_type, n, defualt_setting = 
 
 # returns the estimated ATE, empirical 95% CI, and coverage rates
 ##############################################################
-run_simu_rep <- function(simu.num, eval_points, y_type, n, rounds, defualt_setting = F){
+run_simu_rep <- function(simu.num, eval_points, y_type, n, rounds, zero_default = F, base_num_knots = 20){
   
   bootstrap = F
   
@@ -761,7 +761,7 @@ run_simu_rep <- function(simu.num, eval_points, y_type, n, rounds, defualt_setti
   for(r in 1:rounds){
     print(paste0("round ", r))
     result <- tryCatch({
-      run_simu_1round(simu.num, eval_points, y_type, n=n, defualt_setting)
+      run_simu_1round(simu.num, eval_points, y_type, n=n, zero_default, base_num_knots)
     }, error = function(e) {
       print(paste0("Error: ", e$message))
       NULL
@@ -770,7 +770,7 @@ run_simu_rep <- function(simu.num, eval_points, y_type, n, rounds, defualt_setti
     while(is.null(result)) {
       print('retry with a new generated data')
       result <- tryCatch({
-        run_simu_1round(simu.num, eval_points, y_type, n=n, defualt_setting)
+        run_simu_1round(simu.num, eval_points, y_type, n=n, zero_default, base_num_knots)
       }, error = function(e) {
         print(paste0("Error: ", e$message))
         NULL

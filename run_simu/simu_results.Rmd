@@ -381,16 +381,14 @@ X <- obs %>%
     select(all_of(x_names)) %>% 
     mutate_if(sapply(., is.factor), as.numeric)
 
-hal_CV <- fit_hal(X = X, Y = Y, family = "binomial",
+fit_obj <- fit_hal(X = X, Y = Y, family = "binomial",
                     return_x_basis = TRUE,
                     num_knots = hal9001:::num_knots_generator(
-                      max_degree = ifelse(ncol(X) >= 20, 2, 3),
-                      smoothness_orders = 1,
-                      base_num_knots_0 = 20,
-                      base_num_knots_1 = 20 # max(100, ceiling(sqrt(n)))
+                      max_degree = 1,
+                      smoothness_orders = 1
                     ))
 
-summary(hal_CV)
+summary(fit_obj)
 
 x_basis_CV = cbind(1, hal_CV$x_basis)[, which(hal_CV$coefs != 0)]
 
