@@ -2,14 +2,19 @@
 simu.num <- Sys.getenv("SIMU_NUM")
 n <- Sys.getenv("SAMPLE_N")
 
-half1 <- Sys.getenv("HALF1")
-half2 <- Sys.getenv("HALF2")
-grid_extra <- Sys.getenv("GRID_EXTRA")
-first_smallKnot <- Sys.getenv("FIRST_SMALLKNOTS")
+# half1 <- Sys.getenv("HALF1")
+# half2 <- Sys.getenv("HALF2")
+# grid_extra <- Sys.getenv("GRID_EXTRA")
+# first_smallKnot <- Sys.getenv("FIRST_SMALLKNOTS")
+
+
+half1 <- F
+half2 <- F
+grid_extra <- F
+first_smallKnot <- T
 
 print(simu.num)
 print(n)
-
 
 
 library(here)
