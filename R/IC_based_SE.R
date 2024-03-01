@@ -134,7 +134,7 @@ cal_IC_for_EY <- function(X_new, beta_n, IC_beta, family = 'binomial'){
     d_phi_new = X_new
   }
   
-  IC = diag(d_phi_new %*% IC_beta)
+  IC = colMeans(d_phi_new %*% IC_beta)
   
   return(IC)
 }
@@ -157,7 +157,7 @@ cal_IC_for_ATE <- function(X_new_a, X_new_0, beta_n, IC_beta, family = 'binomial
     d_phi_new <- X_new_a - X_new_0
   }
   
-  IC = diag(d_phi_new %*% IC_beta)
+  IC = colMeans(d_phi_new %*% IC_beta)
   
   return(IC)
 }

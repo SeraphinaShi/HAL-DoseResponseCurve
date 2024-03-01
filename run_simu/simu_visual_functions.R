@@ -180,8 +180,8 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
   }
   
   p_mse <- ggplot(df, aes(x = a)) +  
-    geom_line(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) +
-    geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
+    # geom_line(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) +
+    # geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
     geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
     geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
     labs(x="Treatment", y = "MSE", title="(f) Mean Squared Error") + 
@@ -533,7 +533,7 @@ plot_performences_adapt <- function(df, save_plot=NA){
                     p_bias_se_e, p_bias_se_o,
                     p_bias, legend,
                     p_se_e, p_se_o, 
-                    p_mse_e, p_mse_o,
+                    p_mse_o,
                     layout_matrix = rbind(c(1,1,2,2),
                                           c(1,1,2,2),
                                           c(3,3,4,4),
@@ -544,8 +544,8 @@ plot_performences_adapt <- function(df, save_plot=NA){
                                           c(7,7,8,8),
                                           c(9,9,10,10),
                                           c(9,9,10,10),
-                                          c(11,11,12,12),
-                                          c(11,11,12,12)),
+                                          c(NA,NA,11,11),
+                                          c(NA,NA,11,11)),
                     top = textGrob(paste0("   Delta-Method                               Oracle    \n"), 
                                    gp=gpar(fontsize=17)))
   
@@ -629,8 +629,8 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     p_se <- p_se + theme(legend.position='none')
     
     p_mse <- ggplot(df_a, aes(x = lambda_scaler)) +  
-      geom_line(aes(y = MSE, color='Delta')) + 
-      geom_point(aes(y = MSE, color='Delta')) + 
+      # geom_line(aes(y = MSE, color='Delta')) + 
+      # geom_point(aes(y = MSE, color='Delta')) + 
       geom_line(aes(y = oracle_MSE, color='Oracle')) + 
       geom_point(aes(y = oracle_MSE, color='Oracle')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
@@ -704,7 +704,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     p_est_avg_list[[i]] = p_est_avg
     p_bias_list[[i]] = p_bias
     p_se_list[[i]] = p_se
-    p_mse_list[[i]] = p_se
+    p_mse_list[[i]] = p_mse
     p_bias_se_list[[i]] = p_bias_se
     p_cr_list[[i]] = p_cr
   }
@@ -977,8 +977,19 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
                     p_bias_sd[[1]], p_bias_sd[[2]], 
                     p_bias, legend, 
                     p_se[[1]], p_se[[2]], 
-                    p_mse[[1]], p_mse[[2]],
-                    ncol=2, 
+                     p_mse[[2]],
+                    layout_matrix = rbind(c(1,1,2,2),
+                                          c(1,1,2,2),
+                                          c(3,3,4,4),
+                                          c(3,3,4,4),
+                                          c(5,5,6,6),
+                                          c(5,5,6,6),
+                                          c(7,7,8,8),
+                                          c(7,7,8,8),
+                                          c(9,9,10,10),
+                                          c(9,9,10,10),
+                                          c(NA,NA,11,11),
+                                          c(NA,NA,11,11)), 
                     top = textGrob(paste0("Compare Methods"), 
                                    gp=gpar(fontsize=17)))
   
@@ -1215,8 +1226,19 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
                     p_bias_sd[[1]], p_bias_sd[[2]], 
                     p_bias, legend, 
                     p_se[[1]], p_se[[2]], 
-                    p_mse[[1]], p_mse[[2]],
-                    ncol=2, 
+                    p_mse[[2]],
+                    layout_matrix = rbind(c(1,1,2,2),
+                                          c(1,1,2,2),
+                                          c(3,3,4,4),
+                                          c(3,3,4,4),
+                                          c(5,5,6,6),
+                                          c(5,5,6,6),
+                                          c(7,7,8,8),
+                                          c(7,7,8,8),
+                                          c(9,9,10,10),
+                                          c(9,9,10,10),
+                                          c(NA,NA,11,11),
+                                          c(NA,NA,11,11)),
                     top = textGrob(paste0("Compare Methods"), 
                                    gp=gpar(fontsize=17)))
   
@@ -1339,8 +1361,8 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
     p_mse <- ggplot(df_a, aes(x = lambda)) +  
       geom_line(aes(y = MSE, color='Delta')) + 
       geom_point(aes(y = MSE, color='Delta')) + 
-      geom_line(aes(y = oracle_MSE, color='Oracle')) + 
-      geom_point(aes(y = oracle_MSE, color='Oracle')) +
+      # geom_line(aes(y = oracle_MSE, color='Oracle')) + 
+      # geom_point(aes(y = oracle_MSE, color='Oracle')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
@@ -1413,7 +1435,7 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
     p_est_avg_list[[i]] = p_est_avg
     p_bias_list[[i]] = p_bias
     p_se_list[[i]] = p_se
-    p_mse_list[[i]] = p_se
+    p_mse_list[[i]] = p_mse
     p_bias_se_list[[i]] = p_bias_se
     p_cr_list[[i]] = p_cr
   }
@@ -1512,8 +1534,8 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
   p_mse <- ggplot(df_a, aes(x = lambda)) +  
     geom_line(aes(y = MSE, color='Delta')) + 
     geom_point(aes(y = MSE, color='Delta')) + 
-    geom_line(aes(y = oracle_MSE, color='Oracle')) + 
-    geom_point(aes(y = oracle_MSE, color='Oracle')) +
+    # geom_line(aes(y = oracle_MSE, color='Oracle')) + 
+    # geom_point(aes(y = oracle_MSE, color='Oracle')) +
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     scale_color_manual(name='Method',
                        breaks=c('Oracle', 'Delta'),
@@ -1606,4 +1628,196 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
   return(p)
 }
 
+
+
+plot_performences_knots <- function(df, save_plot=NA, return_plot = "all"){
+  
+  color_cv =  "#F8766D"
+  color_u_g = "#00BA38"
+  color_cv_10 =  "purple2"
+  color_u_g_10 = "skyblue2"
+  
+  a_max <- max(df$a)
+  
+  p_lambda <- ggplot(data=df, aes(x=a)) +
+    geom_line(aes(y=lambda_scaler, color=method), alpha = 0.7) +
+    geom_point(aes(y=lambda_scaler, color=method), shape=17, size=2, alpha= 0.7) +
+    ylim(0, 1.2) +
+    labs(x="a", y="lambda_scaler", 
+         title = "Lambda scaler",
+         subtitle = paste0("upon CV_lambda ", round(mean(df$lambda[df$method == 'CV']), 6)))+
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    scale_color_manual(name='Selector',
+                       breaks=c('CV_knots20', 'Undersmooth_knots20','CV_knots10', 'Undersmooth_knots10'),
+                       values=c('CV_knots20'=color_cv, 'Undersmooth_knots20'=color_u_g,'CV_knots10'=color_cv_10, 'Undersmooth_knots10'=color_u_g_10)) +
+    scale_linetype_manual(name='Method',
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
+    theme_bw()+
+    theme(legend.position='none') 
+  
+  p_est_avg <- ggplot(data=df, aes(x=a)) +
+    geom_line(aes(y=psi0), alpha = 0.5, color="darkgrey") +
+    geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, color=method, fill=method, linetype='Delta'),  alpha=0.1) +
+    geom_ribbon(aes(ymin=oracle_ci_lwr, ymax=oracle_ci_upr, color=method, fill=method, linetype = "Oracle"),  width=0.7, alpha=0.1) +
+    geom_point(aes(y=psi0), color = "black") +
+    geom_point(aes(y=y_hat, color=method), shape=17, size=2, alpha= 0.7) +
+    labs(x="Treatment", y="Outcome", title = "(a) Estimations & 95% CIs") +
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    scale_color_manual(name='Selector',
+                       breaks=c('CV_knots20', 'Undersmooth_knots20','CV_knots10', 'Undersmooth_knots10'),
+                       values=c('CV_knots20'=color_cv, 'Undersmooth_knots20'=color_u_g,'CV_knots10'=color_cv_10, 'Undersmooth_knots10'=color_u_g_10)) +
+    scale_linetype_manual(name='Method',
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
+    theme_bw() +
+    theme(legend.box = "horizontal",
+          legend.position='none')
+  
+  if (return_plot == "p_est_avg"){
+    return(p_est_avg)
+  }
+  
+  ymin_cr = max(0.95, min(df$cover_rate, df$oracle_cover_rate))
+  p_cr <- ggplot(df, aes(x = a)) +  
+    geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=ymin_cr,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
+    geom_line(aes(y = cover_rate, color=method, linetype='Delta'), alpha=0.7) +
+    geom_point(aes(y = cover_rate, color=method, linetype='Delta'), alpha=0.7) + 
+    geom_line(aes(y = oracle_cover_rate, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = oracle_cover_rate, color=method, linetype='Oracle'), alpha=0.7) + 
+    labs(x="Treatment", y = "Coverage Rate", title="(b) 95% CI Coverage Rate") + 
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_color_manual(name='Selector',
+                       breaks=c('CV_knots20', 'Undersmooth_knots20','CV_knots10', 'Undersmooth_knots10'),
+                       values=c('CV_knots20'=color_cv, 'Undersmooth_knots20'=color_u_g,'CV_knots10'=color_cv_10, 'Undersmooth_knots10'=color_u_g_10)) +
+    scale_linetype_manual(name='Method',
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
+    theme_bw() +
+    theme(legend.position='none') 
+  
+  if (return_plot == "p_cr"){
+    return(p_cr)
+  }
+  
+  df_bias_se <- df[! df$a %in% c(0,5), ]
+  p_bias_se <- ggplot(df_bias_se, aes(x = a)) +  
+    xlim(0,5) +
+    geom_line(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
+    geom_point(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) + 
+    geom_line(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
+    labs(x="Treatment", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") + 
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+    scale_color_manual(name='Selector',
+                       breaks=c('CV_knots20', 'Undersmooth_knots20','CV_knots10', 'Undersmooth_knots10'),
+                       values=c('CV_knots20'=color_cv, 'Undersmooth_knots20'=color_u_g,'CV_knots10'=color_cv_10, 'Undersmooth_knots10'=color_u_g_10)) +
+    scale_linetype_manual(name='Method',
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
+    theme_bw() +
+    theme(legend.position='none') 
+  if (return_plot == "p_bias_se"){
+    return(p_bias_se)
+  }
+  
+  p_mse <- ggplot(df, aes(x = a)) +  
+    geom_line(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) +
+    geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
+    # geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
+    # geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
+    labs(x="Treatment", y = "MSE", title="(f) Mean Squared Error") + 
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    scale_color_manual(name='Selector',
+                       breaks=c('CV_knots20', 'Undersmooth_knots20','CV_knots10', 'Undersmooth_knots10'),
+                       values=c('CV_knots20'=color_cv, 'Undersmooth_knots20'=color_u_g,'CV_knots10'=color_cv_10, 'Undersmooth_knots10'=color_u_g_10)) +
+    scale_linetype_manual(name='Method',
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
+    theme_bw() + 
+    theme(legend.position='none')
+  
+  if (return_plot == "p_mse"){
+    return(p_mse)
+  }
+  
+  
+  p_bias <- ggplot(df, aes(x = a, y = bias)) +  
+    geom_line(aes(color=method)) +
+    geom_point(aes(color=method)) + 
+    labs(x="Treatment", y = "|Bias|", title="(d) Absolute Bias") +
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    scale_color_manual(name='Selector',
+                       breaks=c('CV_knots20', 'Undersmooth_knots20','CV_knots10', 'Undersmooth_knots10'),
+                       values=c('CV_knots20'=color_cv, 'Undersmooth_knots20'=color_u_g,'CV_knots10'=color_cv_10, 'Undersmooth_knots10'=color_u_g_10)) +
+    theme_bw() +
+    theme(legend.position='none') 
+  
+  
+  if (return_plot == "legend"){
+    p_se <- ggplot(df, aes(x = a)) +  
+      geom_line(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) +
+      geom_point(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) + 
+      geom_line(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) +
+      geom_point(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) + 
+      labs(x="Treatment", y = "SE", title="(e) Standard Error") +
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      scale_color_manual(name='Selector',
+                         breaks=c('CV_knots20', 'Undersmooth_knots20','CV_knots10', 'Undersmooth_knots10'),
+                         values=c('CV_knots20'=color_cv, 'Undersmooth_knots20'=color_u_g,'CV_knots10'=color_cv_10, 'Undersmooth_knots10'=color_u_g_10)) +
+      scale_linetype_manual(name='Method',
+                            breaks=c('Oracle', 'Delta'),
+                            values=c('Oracle'=1, 'Delta'=5)) +
+      theme_bw() 
+    
+    legend <- get_legend(p_se)
+    
+    return(legend)
+  }
+  
+  p_se <- ggplot(df, aes(x = a)) +  
+    geom_line(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) +
+    geom_point(aes(y = SE, color=method, linetype='Delta'),alpha=0.7) + 
+    geom_line(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) +
+    geom_point(aes(y = oracle_SE, color=method, linetype='Oracle'),alpha=0.7) + 
+    labs(x="Treatment", y = "SE", title="(e) Standard Error") + 
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    scale_color_manual(name='Selector',
+                       breaks=c('CV_knots20', 'Undersmooth_knots20','CV_knots10', 'Undersmooth_knots10'),
+                       values=c('CV_knots20'=color_cv, 'Undersmooth_knots20'=color_u_g,'CV_knots10'=color_cv_10, 'Undersmooth_knots10'=color_u_g_10)) +
+    scale_linetype_manual(name='Method',
+                          breaks=c('Oracle', 'Delta'),
+                          values=c('Oracle'=1, 'Delta'=5)) +
+    theme_bw() 
+  # theme(legend.box = "horizontal")
+  
+  legend <- get_legend(p_se)
+  p_se <- p_se + theme(legend.position='none')
+  
+  if (return_plot == "p_se"){
+    return(p_se)
+  }
+  
+  
+  
+  p <- grid.arrange(p_est_avg, p_cr, p_bias_se,  p_bias, p_se, p_mse, legend,
+                    layout_matrix = rbind(c(1,1,2,2,3,3,NA),
+                                          c(1,1,2,2,3,3,7),
+                                          c(4,4,5,5,6,6,7),
+                                          c(4,4,5,5,6,6,NA))# ,
+                    # top = textGrob(paste0("HAL-based plug-in estimator performences"), gp=gpar(fontsize=17))
+  )
+  
+  if(!any(is.na(save_plot))){
+    for (i in 1:length(save_plot)) {
+      save_loc <- save_plot[i]
+      ggsave(save_loc, plot=p, width = 10, height = 5, dpi = 800)
+    }
+  }
+  
+  return(p)
+  
+}
 

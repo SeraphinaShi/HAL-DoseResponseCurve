@@ -369,17 +369,22 @@ ggsave(save_plot, plot=p, width = 12, height = 5, dpi = 800)
 library(corrplot)
 
 set.seed(123)
+n = 500
 
-n = 1000
-obs = DGS(simu=1, n)
+U_Y <- runif(n, 0, 1)
+U_A <-  rnorm(n, 0, 2)
 
-y_name = "Y"
-x_names = names(obs)[names(obs) != 'Y']
-  
-Y <- as.numeric(as.matrix(obs %>% select(all_of(y_name))))
-X <- obs %>% 
-    select(all_of(x_names)) %>% 
-    mutate_if(sapply(., is.factor), as.numeric)
+W <- rnorm(n, 0, 1)
+
+A <-  2 - 0.5*W + U_A
+A[A<=0] = 0
+A[A>=5] = 5
+
+X <- cbind(W, A)
+
+Y <- as.numeric(U_Y < plogis(-5 + W + 2.25*A - 0.5 * W * A ))
+    
+obs <- data.frame(W, A, Y)
 
 fit_obj <- fit_hal(X = X, Y = Y, family = "binomial",
                     return_x_basis = TRUE,

@@ -2,16 +2,9 @@
 simu.num <- Sys.getenv("SIMU_NUM")
 n <- Sys.getenv("SAMPLE_N")
 
-# half1 <- Sys.getenv("HALF1")
-# half2 <- Sys.getenv("HALF2")
-# grid_extra <- Sys.getenv("GRID_EXTRA")
-# first_smallKnot <- Sys.getenv("FIRST_SMALLKNOTS")
-
-
-half1 <- F
-half2 <- F
-grid_extra <- F
-first_smallKnot <- T
+part1 <- Sys.getenv("PART1")
+part2 <- Sys.getenv("PART2")
+part2 <- Sys.getenv("PART3")
 
 print(simu.num)
 print(n)
@@ -43,7 +36,7 @@ psi0_pnt <- psi0_all[psi0_all$a %in% eval_points,]
 
 save.image(file=here("data", "rdata", paste("simu", simu.num, "psi0.Rdata", sep="_")))
 
-if(half1){
+if(part1){
   ## ------1st order HAL
   set.seed(123)
   
@@ -69,7 +62,7 @@ if(half1){
   rm(results_grid)
 }
 
-if(half2){
+if(part2){
   ## -------apadt smoothness HAL
   set.seed(123)
   results_adapt <- run_simu_smoothness_adaptive_HAL_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
@@ -100,19 +93,19 @@ if(half2){
 }
 
 
-if(grid_extra){
+if(part3){
   set.seed(123)
   results_grid_extra <- run_simu_scaled_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, grid_extra = T)
   
   save.image(file=here("data", "rdata", paste("simu", simu.num, n, "grid_extra.Rdata", sep="_")))
 }
 
-if(first_smallKnot){
-  ## ------1st order HAL with smaller knots
-  set.seed(123)
-  
-  results_1_smallKnots <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, base_num_knots = 10)
-  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "first_smallKnot.Rdata", sep="_")))
-  
-  rm(results_1)
-}
+# if(first_smallKnot){
+#   ## ------1st order HAL with smaller knots
+#   set.seed(123)
+#   
+#   results_1_smallKnots <- run_simu_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, base_num_knots = 10)
+#   save.image(file=here("data", "rdata", paste("simu", simu.num, n, "first_smallKnot.Rdata", sep="_")))
+#   
+#   rm(results_1)
+# }
