@@ -380,6 +380,29 @@ fit_hal_CV_U_0 <- function(X, Y, y_type, eval_points){
   return(list(hal_fit_list = hal_fit_list, lambda_list = lambda_list, hal_fit_time_list = hal_fit_time_list, num_basis_list = num_basis_list))
 }
 
+add_bound <- function(summary_df){
+  
+  bounds = c(0,1)
+  
+  summary_df$y_hat <- pmax(bounds[1], summary_df$y_hat)
+  summary_df$y_hat <- pmin(summary_df$y_hat, bounds[2])
+  
+  summary_df$ci_lwr <- pmax(bounds[1], summary_df$ci_lwr)
+  summary_df$ci_lwr <- pmin(summary_df$ci_lwr, bounds[2])
+  
+  summary_df$ci_upr = pmax(bounds[1], summary_df$ci_upr)
+  summary_df$ci_upr <- pmin(summary_df$ci_upr, bounds[2])
+  
+  if("oracle_ci_lwr" %in% names(summary_df)){
+    summary_df$oracle_ci_lwr <- pmax(bounds[1], summary_df$oracle_ci_lwr)
+    summary_df$oracle_ci_lwr <- pmin(summary_df$oracle_ci_lwr, bounds[2])
+    
+    summary_df$oracle_ci_upr = pmax(bounds[1], summary_df$oracle_ci_upr)
+    summary_df$oracle_ci_upr <- pmin(summary_df$oracle_ci_upr, bounds[2])
+  }
+  
+  return(summary_df)
+}
 
 run_simu_smoothness_adaptive_HAL_rep <- function(simu.num, eval_points, y_type, n, rounds){
   result_list <- list()
@@ -418,7 +441,8 @@ run_simu_smoothness_adaptive_HAL_rep <- function(simu.num, eval_points, y_type, 
       filter(SE != 0) %>% 
       mutate(bias = abs(y_hat - psi0),
              bias_se_ratio = bias / SE,
-             cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr)) %>% 
+             cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr),
+             MSE = (y_hat - psi0)^2 ) %>% 
       group_by(a) %>% 
       mutate(oracle_SE = sqrt(var(y_hat)),
              oracle_bias_se_ratio = bias / oracle_SE,
@@ -437,6 +461,8 @@ run_simu_smoothness_adaptive_HAL_rep <- function(simu.num, eval_points, y_type, 
   }
   
   result_summary = do.call("rbind", result_summaries) %>% as.data.frame()
+  
+  result_summary <- add_bound(result_summary)
   
   results <- list(result_summary = result_summary, result_list = result_list)
   return(results)
@@ -790,7 +816,8 @@ run_simu_rep <- function(simu.num, eval_points, y_type, n, rounds, zero_default 
         filter(SE != 0) %>% 
         mutate(bias = abs(y_hat - psi0),
                bias_se_ratio = bias / SE,
-               cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr)) %>% 
+               cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr),
+               MSE = (y_hat - psi0)^2 ) %>% 
         group_by(a) %>% 
         mutate(oracle_SE = sqrt(var(y_hat)),
                oracle_bias_se_ratio = bias / oracle_SE,
@@ -802,6 +829,8 @@ run_simu_rep <- function(simu.num, eval_points, y_type, n, rounds, zero_default 
         mutate(hal_fit_time_unit = 'secs',
                method = method)
     
+    result_summary <- add_bound(result_summary)
+    
     
      results[[method]] <- list(result_summary = result_summary,
                                 all_results = result_list_method)
@@ -809,6 +838,7 @@ run_simu_rep <- function(simu.num, eval_points, y_type, n, rounds, zero_default 
   }
   
   results$result_summary <- rbind(results$CV$result_summary, results$U_G$result_summary, results$U_L$result_summary)
+  
   
   return(results)
 }
@@ -984,23 +1014,24 @@ run_simu_scaled_rep <- function(simu.num, eval_points, y_type, n, rounds, grid_e
 
   results <- list()
   no_empirical_CI_proportion <- c()
-
+  
   for (i in 1:length(lambda_scalers)){
-
+    
     lambda_scaler = lambda_scalers[i]
+    
+    all_results =  lapply(result_list, function(lst) lst[[i]][c('a', 'y_hat', 'lambda', 'lambda_scaler', 'hal_fit_time', 'n_basis', 'SE', 'ci_lwr', 'ci_upr')])
 
-    result_list_scale <- lapply(result_list, function(lst) lst[[i]][c('a', 'y_hat', 'lambda', 'lambda_scaler', 'hal_fit_time', 'n_basis', 'SE', 'ci_lwr', 'ci_upr')])
-    no_empirical_CI_proportion[i] <- mean(sapply(result_list_scale, function(rlt) any(is.na(rlt[,colnames(rlt) == 'SE']))))
-    result_all <-  do.call("rbind", result_list_scale) %>% as.data.frame()
+    result_all <-  do.call("rbind", all_results) %>% as.data.frame()
     result_all <- merge(as.data.frame(psi0_pnt), result_all, by=c("a"))
     
+    no_empirical_CI_proportion[i] <- mean(sapply(all_results, function(rlt) any(is.na(rlt[,colnames(rlt) == 'SE']))))
+    
     result_summary <- result_all %>%
-      filter((SE != 0) | (is.na(SE))) %>%
+      filter(SE != 0) %>%
       mutate(bias = abs(y_hat - psi0),
              bias_se_ratio = bias / SE,
-             # bias_se_ratio_bt = bias / SE_bt,
-             # cover_rate_bt = as.numeric(ci_lwr_bt <= psi0 & psi0 <= ci_upr_bt) ,
-             cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr)) %>%
+             cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr),
+             MSE = (y_hat - psi0)^2 ) %>%
       group_by(a) %>%
       mutate(oracle_SE = sqrt(var(y_hat)),
              oracle_bias_se_ratio = bias / oracle_SE,
@@ -1011,18 +1042,23 @@ run_simu_scaled_rep <- function(simu.num, eval_points, y_type, n, rounds, grid_e
       ungroup() %>%
       mutate(hal_fit_time_unit = 'secs',
              method = 'scale')
-
-      results[[paste0("scale=", round(lambda_scaler, 4))]] <- list(result_summary = result_summary,
-                                                                   all_results = result_list_scale)
+    
+    result_summary <- add_bound(result_summary)
+    
+    results[[paste0("scale=", round(lambda_scaler, 4))]] <- list(result_summary = result_summary,
+                                                                 all_results = all_results)
+    
   }
-
+  
   result_summary <- results[[1]]$result_summary
   for (i in 2:length(lambda_scalers)) {
     result_summary <- rbind(result_summary, results[[i]]$result_summary)
   }
+  
   results$result_summary <- result_summary
-
+  
   results$no_empirical_CI_proportion <- no_empirical_CI_proportion
+  
 
   return(results)
 }

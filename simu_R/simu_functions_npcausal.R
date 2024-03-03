@@ -82,10 +82,12 @@ run_simu_npcausal_rep <- function(simu.num, eval_points, y_type, n, rounds){
   result_all <- merge(as.data.frame(psi0_pnt), result_all, by=c("a"))
   
   result_summary <- result_all %>% 
-    filter(SE != 0) %>% 
+    filter(SE != 0, ! is.na(y_hat)) %>% 
+    mutate(SE = SE/sqrt(nn)) %>%
     mutate(bias = abs(y_hat - psi0),
            bias_se_ratio = bias / SE,
-           cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr)) %>% 
+           cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr),
+           MSE =(y_hat - psi0)^2 ) %>% 
     group_by(a) %>% 
     mutate(oracal_SE = sqrt(var(y_hat)),
            oracal_bias_se_ratio = bias / oracal_SE,
@@ -96,10 +98,9 @@ run_simu_npcausal_rep <- function(simu.num, eval_points, y_type, n, rounds){
     ungroup() %>%
     mutate(method = "npcausal")
   
-
-    results <- list(result_summary = result_summary,
-                    all_results = result_list)
- 
+  results <- list(result_summary = result_summary,
+                  all_results = results_list$all_results)
+  
   return(results)
 }
 

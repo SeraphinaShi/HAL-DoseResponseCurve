@@ -7,15 +7,59 @@
 #$ -M junming_shi@berkeley.edu
 #$ -m base
 # Loop over SIMU_NUM
-for SIMU_NUM in 1 2 3 4; do
+#!/bin/bash
 
-  # Loop over SAMPLE_N
-  for SAMPLE_N in 200 500 1000 5000; do
+# Start scripts in parallel
+export SIMU_NUM=1 SAMPLE_N=200 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+export SIMU_NUM=1 SAMPLE_N=500 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+export SIMU_NUM=1 SAMPLE_N=1000 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
 
-    # Export the variables
-    export SIMU_NUM SAMPLE_N 
-    
-    R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}.Rout"
+export SIMU_NUM=1 SAMPLE_N=200 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+export SIMU_NUM=1 SAMPLE_N=500 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+export SIMU_NUM=1 SAMPLE_N=1000 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
 
-  done
-done
+export SIMU_NUM=1 SAMPLE_N=200 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+export SIMU_NUM=1 SAMPLE_N=500 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+export SIMU_NUM=1 SAMPLE_N=1000 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+
+
+export SIMU_NUM=2 SAMPLE_N=200 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+export SIMU_NUM=2 SAMPLE_N=500 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+export SIMU_NUM=2 SAMPLE_N=1000 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+
+export SIMU_NUM=2 SAMPLE_N=200 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+export SIMU_NUM=2 SAMPLE_N=500 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+export SIMU_NUM=2 SAMPLE_N=1000 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+
+export SIMU_NUM=2 SAMPLE_N=200 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+export SIMU_NUM=2 SAMPLE_N=500 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+export SIMU_NUM=2 SAMPLE_N=1000 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+
+
+export SIMU_NUM=3 SAMPLE_N=200 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+export SIMU_NUM=3 SAMPLE_N=500 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+export SIMU_NUM=3 SAMPLE_N=1000 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+
+export SIMU_NUM=3 SAMPLE_N=200 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+export SIMU_NUM=3 SAMPLE_N=500 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+export SIMU_NUM=3 SAMPLE_N=1000 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+
+export SIMU_NUM=3 SAMPLE_N=200 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+export SIMU_NUM=3 SAMPLE_N=500 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+export SIMU_NUM=3 SAMPLE_N=1000 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+
+
+export SIMU_NUM=4 SAMPLE_N=200 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+export SIMU_NUM=4 SAMPLE_N=500 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+export SIMU_NUM=4 SAMPLE_N=1000 PART1=True PART2=False PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part1.Rout" &
+
+export SIMU_NUM=4 SAMPLE_N=200 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+export SIMU_NUM=4 SAMPLE_N=500 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+export SIMU_NUM=4 SAMPLE_N=1000 PART1=False PART2=True PART3=False; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part2.Rout" &
+
+export SIMU_NUM=4 SAMPLE_N=200 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+export SIMU_NUM=4 SAMPLE_N=500 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+export SIMU_NUM=4 SAMPLE_N=1000 PART1=False PART2=False PART3=True; R CMD BATCH --no-save run_simu/run_simu.R "run_simu/simu_${SIMU_NUM}_${SAMPLE_N}_part3.Rout" &
+
+# Wait for all background jobs to finish
+wait

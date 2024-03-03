@@ -6,11 +6,7 @@ load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_zero.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
 results_0$result_summary <- rename_df(results_0$result_summary)
 
-results_0$result_summary = add_bound(results_0$result_summary)
 rslt_sum_zero = results_0$result_summary
-
-rslt_sum_zero$MSE = rslt_sum_zero$bias^2 + rslt_sum_zero$SE^2
-rslt_sum_zero$oracle_MSE = rslt_sum_zero$bias^2 + rslt_sum_zero$oracle_SE^2
 
 cv_lambda = unique(rslt_sum_zero$lambda[rslt_sum_zero$method == 'CV'])
 u_g_lambda = unique(rslt_sum_zero$lambda[rslt_sum_zero$method == 'U_G'])
@@ -85,14 +81,8 @@ for (i in 1:length(save_plots)) {
 ```{r}
 load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
-results_1$result_summary <- rename_df(results_1$result_summary)
-
-results_1$result_summary = add_bound(results_1$result_summary)
-results_1$result_summary$MSE = results_1$result_summary$bias^2 + results_1$result_summary$SE^2
-results_1$result_summary$oracle_MSE = results_1$result_summary$bias^2 + results_1$result_summary$oracle_SE^2
 
 rslt_sum = results_1$result_summary
-
 
 cv_lambda = unique(rslt_sum$lambda[rslt_sum$method == 'CV'])
 u_g_lambda = mean(unique(rslt_sum$lambda[rslt_sum$method == 'U_G']))
@@ -142,14 +132,8 @@ plot(p)
 if (nn != 5000){
   load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first_smallKnot.RData")))
   source(here("run_simu", "simu_visual_functions.R"))
-  results_1_smallKnots$result_summary <- rename_df(results_1_smallKnots$result_summary)
-  
-  results_1_smallKnots$result_summary = add_bound(results_1_smallKnots$result_summary)
-  results_1_smallKnots$result_summary$MSE = results_1_smallKnots$result_summary$bias^2 + results_1_smallKnots$result_summary$SE^2
-  results_1_smallKnots$result_summary$oracle_MSE = results_1_smallKnots$result_summary$bias^2 + results_1_smallKnots$result_summary$oracle_SE^2
   
   rslt_smallKnots_sum = results_1_smallKnots$result_summary
-  
   
   cv_lambda_smallKnots = unique(rslt_smallKnots_sum$lambda[rslt_smallKnots_sum$method == 'CV'])
   u_g_lambda_smallKnots = mean(unique(rslt_smallKnots_sum$lambda[rslt_smallKnots_sum$method == 'U_G']))
@@ -226,12 +210,6 @@ load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
 results_adapt$result_summary <- rename_df(results_adapt$result_summary)
 
-# results_adapt = smoothness_adaptive_HAL_summary(results_adapt$result_list)
-results_adapt$result_summary = add_bound(results_adapt$result_summary)
-
-results_adapt$result_summary$MSE = results_adapt$result_summary$bias^2 + results_adapt$result_summary$SE^2
-results_adapt$result_summary$oracle_MSE = results_adapt$result_summary$bias^2 + results_adapt$result_summary$oracle_SE^2
-
 save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "U_SOadaptive_HAL", paste0("simu_sys", simu.num, "_n", n, "_adapt_performences.png")),
                 save_plot=here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_adapt_performences.png"))
                 )
@@ -297,14 +275,7 @@ load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_grid.RData")))
 
 source(here("run_simu", "simu_visual_functions.R"))
 
-results_grid_s <- results_grid_summary(results_grid)
-results_grid_s <- rename_df(results_grid_s)
-results_grid_s = add_bound(results_grid_s)
-
-results_grid_s$MSE = results_grid_s$bias^2 + results_grid_s$SE^2
-results_grid_s$oracle_MSE = results_grid_s$bias^2 + results_grid_s$oracle_SE^2
-
-
+# results_grid_s <- results_grid_summary(results_grid)
 
 save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "grid_scalers", paste0("simu_sys", simu.num, "_n", n, "_grid_performences.png")), 
                  here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_grid_performences.png")))
@@ -357,13 +328,13 @@ if (nn != 5000 & simu.num != 4){
 load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_grid_extra.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
 
-results_grid_all <- results_grid_summary(results_grid_extra)
-results_grid_all <- rename_df(results_grid_all)
-results_grid_all = add_bound(results_grid_all)
+# results_grid_all <- results_grid_summary(results_grid_extra)
+# results_grid_all <- rename_df(results_grid_all)
+# results_grid_all = add_bound(results_grid_all)
 results_grid_all$method[results_grid_all$method == "U_G"] = "Undersmooth"
 
-results_grid_all$MSE = results_grid_all$bias^2 + results_grid_all$SE^2
-results_grid_all$oracle_MSE = results_grid_all$bias^2 + results_grid_all$oracle_SE^2
+# results_grid_all$MSE = results_grid_all$bias^2 + results_grid_all$SE^2
+# results_grid_all$oracle_MSE = results_grid_all$bias^2 + results_grid_all$oracle_SE^2
 results_grid_all$lambda = results_grid_all$lambda_scaler * mean(results_grid_all$lambda[results_grid_all$lambda_scaler == 1])
 
 save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "grid_scalers", paste0("simu_sys", simu.num, "_n", n, "_grid_performences_extra.png")), 
@@ -426,8 +397,6 @@ load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_npcausal.RData")
 
 
 results_npcausal <- run_simu_rep_npcausal_summary(results_npcausal, "npcausal")
-
-
 
 results_poly$result_summary$method = "Poly"
 
