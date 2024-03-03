@@ -4,7 +4,7 @@ n <- Sys.getenv("SAMPLE_N")
 
 part1 <- Sys.getenv("PART1")
 part2 <- Sys.getenv("PART2")
-part2 <- Sys.getenv("PART3")
+part3 <- Sys.getenv("PART3")
 
 print(simu.num)
 print(n)
