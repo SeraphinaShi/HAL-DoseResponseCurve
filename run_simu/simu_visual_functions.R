@@ -90,8 +90,8 @@ run_simu_rep_GAM_poly_summary <- function(results_list, method){
 
 plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
   
-  color_cv =  "#F8766D"
-  color_u_g = "#00BA38"
+  color_cv =  "#2b6a99" 
+  color_u_g = "#f16c23"
 
   a_max <- max(df$a)
   
@@ -180,10 +180,8 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
   }
   
   p_mse <- ggplot(df, aes(x = a)) +  
-    # geom_line(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) +
-    # geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
-    geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
-    geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
+    geom_line(aes(y = MSE, color=method, linetype='Oracle'),alpha=0.7) +
+    geom_point(aes(y = MSE, color=method, linetype='Oracle'),alpha=0.7) + 
     labs(x="Treatment", y = "MSE", title="(f) Mean Squared Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Selector',
@@ -319,12 +317,12 @@ plot_performences_adapt <- function(df, save_plot=NA){
   df$smooth_order = round(df$smooth_order, 4)
   df$smooth_order = factor(df$smooth_order)
   
-  so_colors = c("#F8766D", "#A3A500", "#00B0F6", "#E76BF3", "#00BF7D")
+  so_colors = c( "#2b6a99", "#A3A500", "#00B0F6", "#E76BF3", "#f16c23")
   if(sum(! unique(df$smooth_order) %in% 0:3) > 0) {
     mean_sl_pick_SO = unique(df$smooth_order)[! unique(df$smooth_order) %in% 0:3]
   } else {
     mean_sl_pick_SO = unique(df$smooth_order[df$sl_pick==1])
-    so_colors[which(0:3 == mean_sl_pick_SO) ] = "#00BF7D"
+    so_colors[which(0:3 == mean_sl_pick_SO) ] = "#f16c23"
   }
   
   
@@ -432,8 +430,8 @@ plot_performences_adapt <- function(df, save_plot=NA){
     theme(legend.position='none')
   
   p_mse_o <- ggplot(df, aes(x = a)) +  
-    geom_line(aes(y = oracle_MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
-    geom_point(aes(y = oracle_MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
+    geom_line(aes(y = MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
+    geom_point(aes(y = MSE, color=smooth_order, linetype=if_n_knots_default),alpha=0.7) +
     # labs(title="Standard Error, Oracle") +
     labs(x="Treatment", y = "MSE", title="(f) Mean Squared Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
@@ -573,7 +571,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     geom_line(aes(x = lambda_scaler, y = y_hat, color = "CV"), lty=2) + 
     theme_bw() +
     scale_colour_manual(name="Selector",
-                        values=c(Undersmooth="deepskyblue", CV="purple")) #, Local="#619CFF",
+                        values=c(Undersmooth= "#f16c23", CV="#2b6a99" )) #, Local="#619CFF",
   legend_undersmoothing <- get_legend(legend_undersmoothing)
   
   p_est_avg_list = list()
@@ -596,9 +594,9 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       geom_hline(aes(yintercept=psi0)) + 
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(breaks=c('Oracle', 'Delta'),
-                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       scale_fill_manual(breaks=c('Oracle', 'Delta'),
-                        values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                        values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       theme_bw() +
       labs(x = "", title = paste0('a = ', curve_pnts[i])) +
       theme(axis.title=element_blank(),
@@ -621,7 +619,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
-                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       theme_bw()+
       theme(axis.title=element_blank())
     
@@ -631,12 +629,12 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     p_mse <- ggplot(df_a, aes(x = lambda_scaler)) +  
       # geom_line(aes(y = MSE, color='Delta')) + 
       # geom_point(aes(y = MSE, color='Delta')) + 
-      geom_line(aes(y = oracle_MSE, color='Oracle')) + 
-      geom_point(aes(y = oracle_MSE, color='Oracle')) +
+      geom_line(aes(y = MSE, color='Oracle')) + 
+      geom_point(aes(y = MSE, color='Oracle')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
-                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       theme_bw()+
       theme(axis.title=element_blank()) +
       theme(legend.position='none')
@@ -649,7 +647,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
-                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       theme_bw() +
       theme(axis.title=element_blank(),
@@ -667,7 +665,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       geom_point(aes(y = oracle_cover_rate, color = "Oracle")) +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
-                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_y_continuous(limits = c(0, 1)) +
       theme_bw()  + 
@@ -676,28 +674,28 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
     
     if(! is.na(u_g_scaler) ){
       p_est_avg <- p_est_avg +      
-        geom_vline(xintercept = u_g_scaler, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = 1, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
       
       p_bias <- p_bias +      
-        geom_vline(xintercept = u_g_scaler, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = 1, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
       
       p_se <- p_se +      
-        geom_vline(xintercept = u_g_scaler, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = 1, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
       
       p_mse <- p_mse +      
-        geom_vline(xintercept = u_g_scaler, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = 1, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
       
       p_bias_se <- p_bias_se +      
-        geom_vline(xintercept = u_g_scaler, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = 1, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
       
       p_cr <- p_cr +      
-        geom_vline(xintercept = u_g_scaler, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = 1, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
       
     }
     
@@ -877,8 +875,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   }
   
   #-------------------------------------------------
-  mse_min = min(df$MSE, df$oracle_MSE)
-  mse_max = max(df$MSE, df$oracle_MSE)
+  mse_min = min(df$MSE, df$MSE)
+  mse_max = max(df$MSE, df$MSE)
   
   p_mse <- list()
   
@@ -887,8 +885,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
     geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
     labs(title = "(f.1) MSE [Delta]", y = "MSE")
   p_mse[[2]] <- ggplot(df, aes(x = a)) +  
-    geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
-    geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
+    geom_line(aes(y = MSE, color=method, linetype='Oracle'),alpha=0.7) +
+    geom_point(aes(y = MSE, color=method, linetype='Oracle'),alpha=0.7) + 
     labs(title = "(f.2) MSE [Oracle]", y = "")
   
   for(i in 1:2){
@@ -1125,8 +1123,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
   }
   
   #-------------------------------------------------
-  mse_min = min(df$MSE, df$oracle_MSE)
-  mse_max = max(df$MSE, df$oracle_MSE)
+  mse_min = min(df$MSE, df$MSE)
+  mse_max = max(df$MSE, df$MSE)
   
   p_mse <- list()
   
@@ -1135,8 +1133,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
     geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
     labs(title = "(f.1) MSE [Delta]", y = "MSE")
   p_mse[[2]] <- ggplot(df, aes(x = a)) +  
-    geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
-    geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
+    geom_line(aes(y = MSE, color=method, linetype='Oracle'),alpha=0.7) +
+    geom_point(aes(y = MSE, color=method, linetype='Oracle'),alpha=0.7) + 
     labs(title = "(f.2) MSE [Oracle]", y = "")
   
   for(i in 1:2){
@@ -1303,7 +1301,7 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
     geom_line(aes(x = lambda, y = y_hat, color = "CV"), lty=2) + 
     theme_bw() +
     scale_colour_manual(name="Selector",
-                        values=c(Undersmooth="deepskyblue", CV="purple")) #, Local="#619CFF",
+                        values=c(Undersmooth="#f16c23", CV="#2b6a99")) #, Local="#619CFF",
   legend_undersmoothing <- get_legend(legend_undersmoothing)
   
   p_est_avg_list = list()
@@ -1326,9 +1324,9 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
       geom_hline(aes(yintercept=psi0)) + 
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(breaks=c('Oracle', 'Delta'),
-                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       scale_fill_manual(breaks=c('Oracle', 'Delta'),
-                        values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                        values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       theme_bw() +
       labs(x = "", title = paste0('a = ', curve_pnts[i])) +
       theme(axis.title=element_blank(),
@@ -1351,7 +1349,7 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
-                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       theme_bw()+
       theme(axis.title=element_blank())
     
@@ -1361,12 +1359,12 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
     p_mse <- ggplot(df_a, aes(x = lambda)) +  
       geom_line(aes(y = MSE, color='Delta')) + 
       geom_point(aes(y = MSE, color='Delta')) + 
-      # geom_line(aes(y = oracle_MSE, color='Oracle')) + 
-      # geom_point(aes(y = oracle_MSE, color='Oracle')) +
+      # geom_line(aes(y = MSE, color='Oracle')) + 
+      # geom_point(aes(y = MSE, color='Oracle')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
-                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       theme_bw()+
       theme(axis.title=element_blank()) +
       theme(legend.position='none')
@@ -1380,7 +1378,7 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
       geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
-                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       theme_bw() +
       theme(axis.title=element_blank(),
@@ -1398,7 +1396,7 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
       geom_point(aes(y = oracle_cover_rate, color = "Oracle")) +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
-                         values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
       # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
       scale_y_continuous(limits = c(0, 1)) +
       theme_bw()  + 
@@ -1407,28 +1405,28 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
     
     if(! is.na(u_g_scaler) ){
       p_est_avg <- p_est_avg +      
-        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
       
       p_bias <- p_bias +      
-        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
       
       p_se <- p_se +      
-        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
       
       p_mse <- p_mse +      
-        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
       
       p_bias_se <- p_bias_se +      
-        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
       
       p_cr <- p_cr +      
-        geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+        geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
       
     }
     
@@ -1485,7 +1483,7 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
     geom_line(aes(x = lambda_scaler, y = y_hat, color = "CV"), lty=2) + 
     theme_bw() +
     scale_colour_manual(name="Selector",
-                        values=c(Undersmooth="deepskyblue", CV="purple")) #, Local="#619CFF",
+                        values=c(Undersmooth="#f16c23", CV="#2b6a99")) #, Local="#619CFF",
   legend_undersmoothing <- get_legend(legend_undersmoothing)
   
   
@@ -1497,9 +1495,9 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
     geom_hline(aes(yintercept=psi0)) + 
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     scale_color_manual(breaks=c('Oracle', 'Delta'),
-                       values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                       values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
     scale_fill_manual(breaks=c('Oracle', 'Delta'),
-                      values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                      values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
     theme_bw() +
     labs(x = "Penalty", y = "Outcome", title = "(a) Estimations & 95% CIs") +
     theme(axis.title=element_blank(),
@@ -1523,7 +1521,7 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     scale_color_manual(name='Method',
                        breaks=c('Oracle', 'Delta'),
-                       values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                       values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
     theme_bw()+
     theme(axis.title=element_blank()) + 
     labs(x="Penalty", y = "SE", title="(e) Standard Error") 
@@ -1534,12 +1532,12 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
   p_mse <- ggplot(df_a, aes(x = lambda)) +  
     geom_line(aes(y = MSE, color='Delta')) + 
     geom_point(aes(y = MSE, color='Delta')) + 
-    # geom_line(aes(y = oracle_MSE, color='Oracle')) + 
-    # geom_point(aes(y = oracle_MSE, color='Oracle')) +
+    # geom_line(aes(y = MSE, color='Oracle')) + 
+    # geom_point(aes(y = MSE, color='Oracle')) +
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     scale_color_manual(name='Method',
                        breaks=c('Oracle', 'Delta'),
-                       values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                       values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
     theme_bw()+
     theme(axis.title=element_blank()) +
     theme(legend.position='none') + 
@@ -1553,7 +1551,7 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
     geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
     scale_color_manual(name='Method',
                        breaks=c('Oracle', 'Delta'),
-                       values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                       values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     theme_bw() +
     theme(axis.title=element_blank(),
@@ -1572,7 +1570,7 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
     geom_point(aes(y = oracle_cover_rate, color = "Oracle")) +
     scale_color_manual(name='Method',
                        breaks=c('Oracle', 'Delta'),
-                       values=c('Oracle'='darkolivegreen3', 'Delta'='lightsalmon')) +
+                       values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
     # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
     scale_y_continuous(limits = c(0, 1)) +
     theme_bw()  + 
@@ -1582,28 +1580,28 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
   
   if(! is.na(u_g_scaler) ){
     p_est_avg <- p_est_avg +      
-      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
     
     p_bias <- p_bias +      
-      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
     
     p_se <- p_se +      
-      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
     
     p_mse <- p_mse +      
-      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
     
     p_bias_se <- p_bias_se +      
-      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
     
     p_cr <- p_cr +      
-      geom_vline(xintercept = u_g_lambda, lty=2, col = "deepskyblue") +
-      geom_vline(xintercept = cv_lambda, lty=2, col = "purple") 
+      geom_vline(xintercept = u_g_lambda, lty=2, col = "#f16c23") +
+      geom_vline(xintercept = cv_lambda, lty=2, col = "#2b6a99") 
     
   }
   
@@ -1632,10 +1630,10 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
 
 plot_performences_knots <- function(df, save_plot=NA, return_plot = "all"){
   
-  color_cv =  "#F8766D"
-  color_u_g = "#00BA38"
+  color_cv =  "#2b6a99" 
+  color_u_g = "#f16c23"
   color_cv_10 =  "purple2"
-  color_u_g_10 = "skyblue2"
+  color_u_g_10 = "#1b7c3d"
   
   a_max <- max(df$a)
   
@@ -1726,8 +1724,8 @@ plot_performences_knots <- function(df, save_plot=NA, return_plot = "all"){
   p_mse <- ggplot(df, aes(x = a)) +  
     geom_line(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) +
     geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
-    # geom_line(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) +
-    # geom_point(aes(y = oracle_MSE, color=method, linetype='Oracle'),alpha=0.7) + 
+    # geom_line(aes(y = MSE, color=method, linetype='Oracle'),alpha=0.7) +
+    # geom_point(aes(y = MSE, color=method, linetype='Oracle'),alpha=0.7) + 
     labs(x="Treatment", y = "MSE", title="(f) Mean Squared Error") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Selector',

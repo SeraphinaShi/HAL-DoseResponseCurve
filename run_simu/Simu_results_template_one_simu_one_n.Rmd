@@ -7,6 +7,7 @@ source(here("run_simu", "simu_visual_functions.R"))
 results_0$result_summary <- rename_df(results_0$result_summary)
 
 rslt_sum_zero = results_0$result_summary
+rslt_sum_zero = add_bound(rslt_sum_zero)
 
 cv_lambda = unique(rslt_sum_zero$lambda[rslt_sum_zero$method == 'CV'])
 u_g_lambda = unique(rslt_sum_zero$lambda[rslt_sum_zero$method == 'U_G'])
@@ -32,6 +33,7 @@ cat(sprintf(' The average fitting time for globally undersmoothed HAL: %0.4f sec
 
 ```{r fig.height=5, fig.width=10}
 rslt_sum_zero$method[rslt_sum_zero$method == "U_G"] = "Undersmooth"
+rslt_sum_zero$bias = abs(rslt_sum_zero$y_hat - rslt_sum_zero$psi0)
 
 save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "zero_HAL", paste0("simu_sys", simu.num, "_n", n, "_performences_zero.png")),
                 here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_performences_zero.png")))
@@ -83,6 +85,7 @@ load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
 
 rslt_sum = results_1$result_summary
+rslt_sum = add_bound(rslt_sum)
 
 cv_lambda = unique(rslt_sum$lambda[rslt_sum$method == 'CV'])
 u_g_lambda = mean(unique(rslt_sum$lambda[rslt_sum$method == 'U_G']))
@@ -126,89 +129,90 @@ plot(p)
 ```
 
 
-### CV vs Undersmoothing (First smoothness order with even smaller number of knots)
+<!-- ### CV vs Undersmoothing (First smoothness order with even smaller number of knots) -->
 
-```{r}
-if (nn != 5000){
-  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first_smallKnot.RData")))
-  source(here("run_simu", "simu_visual_functions.R"))
-  
-  rslt_smallKnots_sum = results_1_smallKnots$result_summary
-  
-  cv_lambda_smallKnots = unique(rslt_smallKnots_sum$lambda[rslt_smallKnots_sum$method == 'CV'])
-  u_g_lambda_smallKnots = mean(unique(rslt_smallKnots_sum$lambda[rslt_smallKnots_sum$method == 'U_G']))
-  u_g_scaler_smallKnots = mean(unique(rslt_smallKnots_sum$lambda_scaler[rslt_smallKnots_sum$method == 'U_G']))
-  
-  eval_points = seq(0,5,0.5)
-  
-  cv_n_bases_smallKnots = unique(rslt_smallKnots_sum$n_basis[rslt_smallKnots_sum$method == 'CV'])
-  u_g_n_bases_smallKnots = unique(rslt_smallKnots_sum$n_basis[rslt_smallKnots_sum$method == 'U_G'])
-  
-  cat(sprintf(' The average lambda of CV-HAL: %0.4f (= 1 * lambda_CV )', cv_lambda_smallKnots))
-  cat(sprintf(' The average lambda of globally undersmoothed HAL: %0.4f (= %0.4f * lambda_CV )', u_g_lambda_smallKnots, u_g_scaler_smallKnots))
-  
-  cat(sprintf(' The average number of bases of CV-HAL: %0.4f ', cv_n_bases_smallKnots))
-  cat(sprintf(' The average number of bases of globally undersmoothed HAL: %0.4f ', u_g_n_bases_smallKnots))
-  
-  
-  cat(sprintf(' The average fitting time for CV-HAL: %0.4f seconds', mean(rslt_smallKnots_sum$hal_fit_time[rslt_smallKnots_sum$method=='CV'])))
-  cat(sprintf(' The average fitting time for globally undersmoothed HAL: %0.4f seconds', mean(rslt_smallKnots_sum$hal_fit_time[rslt_smallKnots_sum$method=='U_G'])))
-}
+<!-- ```{r} -->
+<!-- if (nn != 5000){ -->
+<!--   load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first_smallKnot.RData"))) -->
+<!--   source(here("run_simu", "simu_visual_functions.R")) -->
+
+<!--   rslt_smallKnots_sum = results_1_smallKnots$result_summary -->
+
+<!--   cv_lambda_smallKnots = unique(rslt_smallKnots_sum$lambda[rslt_smallKnots_sum$method == 'CV']) -->
+<!--   u_g_lambda_smallKnots = mean(unique(rslt_smallKnots_sum$lambda[rslt_smallKnots_sum$method == 'U_G'])) -->
+<!--   u_g_scaler_smallKnots = mean(unique(rslt_smallKnots_sum$lambda_scaler[rslt_smallKnots_sum$method == 'U_G'])) -->
+
+<!--   eval_points = seq(0,5,0.5) -->
+
+<!--   cv_n_bases_smallKnots = unique(rslt_smallKnots_sum$n_basis[rslt_smallKnots_sum$method == 'CV']) -->
+<!--   u_g_n_bases_smallKnots = unique(rslt_smallKnots_sum$n_basis[rslt_smallKnots_sum$method == 'U_G']) -->
+
+<!--   cat(sprintf(' The average lambda of CV-HAL: %0.4f (= 1 * lambda_CV )', cv_lambda_smallKnots)) -->
+<!--   cat(sprintf(' The average lambda of globally undersmoothed HAL: %0.4f (= %0.4f * lambda_CV )', u_g_lambda_smallKnots, u_g_scaler_smallKnots)) -->
+
+<!--   cat(sprintf(' The average number of bases of CV-HAL: %0.4f ', cv_n_bases_smallKnots)) -->
+<!--   cat(sprintf(' The average number of bases of globally undersmoothed HAL: %0.4f ', u_g_n_bases_smallKnots)) -->
 
 
-
-```
-
-```{r fig.height=5, fig.width=10}
-if (nn != 5000){
-  rslt_smallKnots_sum$method[rslt_smallKnots_sum$method == "U_G"] = "Undersmooth"
+<!--   cat(sprintf(' The average fitting time for CV-HAL: %0.4f seconds', mean(rslt_smallKnots_sum$hal_fit_time[rslt_smallKnots_sum$method=='CV']))) -->
+<!--   cat(sprintf(' The average fitting time for globally undersmoothed HAL: %0.4f seconds', mean(rslt_smallKnots_sum$hal_fit_time[rslt_smallKnots_sum$method=='U_G']))) -->
+<!-- } -->
 
 
-  save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "first_HAL", paste0("simu_sys", simu.num, "_n", n, "_performences_smallKnots.png")), 
-                   here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_performences_smallKnots.png"))
-                  )
-  p <- plot_performences_cv_ug_alla(df = rslt_smallKnots_sum, save_plot =save_plots)
-}
 
-```
+<!-- ``` -->
 
-```{r fig.height=4, fig.width=12}
-if (nn != 5000){
-  save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "first_HAL", paste0("simu_sys", simu.num, "_n", n, "_QQplots_smallKnots.png")), 
-                 here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_QQplots_smallKnots.png")))
-                
-p <- estimation_qqplot_cv_ug_alla(results_list = results_1_smallKnots, save_plot = save_plots)
-plot(p)
-}
-
-```
-
-### small knots vs smaller knots (First smoothness order)
-```{r fig.height=5, fig.width=10}
-if (nn != 5000){
-  rslt_sum_tmp <- rslt_sum
-rslt_sum_tmp$method <- paste0(rslt_sum_tmp$method, "_knots20")
-
-rslt_smallKnots_sum_tmp <- rslt_smallKnots_sum
-rslt_smallKnots_sum_tmp$method <- paste0(rslt_smallKnots_sum_tmp$method, "_knots10")
-
-rslt_sum_all <- rbind(rslt_sum_tmp, rslt_smallKnots_sum_tmp)
+<!-- ```{r fig.height=5, fig.width=10} -->
+<!-- if (nn != 5000){ -->
+<!--   rslt_smallKnots_sum$method[rslt_smallKnots_sum$method == "U_G"] = "Undersmooth" -->
 
 
-save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "first_HAL", paste0("simu_sys", simu.num, "_n", n, "_performences_compareKnots.png")), 
-                 here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_performences_compareKnots.png"))
-                )
-p <- plot_performences_knots(df = rslt_sum_all, save_plot =save_plots)
-}
+<!--   save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "first_HAL", paste0("simu_sys", simu.num, "_n", n, "_performences_smallKnots.png")),  -->
+<!--                    here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_performences_smallKnots.png")) -->
+<!--                   ) -->
+<!--   p <- plot_performences_cv_ug_alla(df = rslt_smallKnots_sum, save_plot =save_plots) -->
+<!-- } -->
 
-```
+<!-- ``` -->
+
+<!-- ```{r fig.height=4, fig.width=12} -->
+<!-- if (nn != 5000){ -->
+<!--   save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "first_HAL", paste0("simu_sys", simu.num, "_n", n, "_QQplots_smallKnots.png")),  -->
+<!--                  here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_QQplots_smallKnots.png"))) -->
+
+<!-- p <- estimation_qqplot_cv_ug_alla(results_list = results_1_smallKnots, save_plot = save_plots) -->
+<!-- plot(p) -->
+<!-- } -->
+
+<!-- ``` -->
+
+<!-- ### small knots vs smaller knots (First smoothness order) -->
+<!-- ```{r fig.height=5, fig.width=10} -->
+<!-- if (nn != 5000){ -->
+<!--   rslt_sum_tmp <- rslt_sum -->
+<!-- rslt_sum_tmp$method <- paste0(rslt_sum_tmp$method, "_knots20") -->
+
+<!-- rslt_smallKnots_sum_tmp <- rslt_smallKnots_sum -->
+<!-- rslt_smallKnots_sum_tmp$method <- paste0(rslt_smallKnots_sum_tmp$method, "_knots10") -->
+
+<!-- rslt_sum_all <- rbind(rslt_sum_tmp, rslt_smallKnots_sum_tmp) -->
+
+
+<!-- save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "first_HAL", paste0("simu_sys", simu.num, "_n", n, "_performences_compareKnots.png")),  -->
+<!--                  here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_performences_compareKnots.png")) -->
+<!--                 ) -->
+<!-- p <- plot_performences_knots(df = rslt_sum_all, save_plot =save_plots) -->
+<!-- } -->
+
+<!-- ``` -->
 
 
 ### Undersmoothed Smoothness-adaptive HAL
 ```{r fig.width=7, fig.height=14}
 load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
-results_adapt$result_summary <- rename_df(results_adapt$result_summary)
+
+results_adapt$result_summary = add_bound(results_adapt$result_summary)
 
 save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "U_SOadaptive_HAL", paste0("simu_sys", simu.num, "_n", n, "_adapt_performences.png")),
                 save_plot=here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_adapt_performences.png"))
@@ -276,6 +280,9 @@ load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_grid.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
 
 # results_grid_s <- results_grid_summary(results_grid)
+results_grid_s <- results_grid$result_summary
+results_grid_s = add_bound(results_grid_s)
+
 
 save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "grid_scalers", paste0("simu_sys", simu.num, "_n", n, "_grid_performences.png")), 
                  here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_grid_performences.png")))
@@ -305,8 +312,8 @@ p_n_basis_grid <- ggplot(df_grid_n_basis, aes(x = lambda_scaler)) +
       theme_bw()  + 
       labs(x = "lambda scalers", y = "Number of bases") +
       theme(legend.position='none') +
-        geom_vline(xintercept = u_g_scaler, lty=2, col = "deepskyblue") +
-        geom_vline(xintercept = 1, lty=2, col = "purple") + 
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") + 
      annotate(x=u_g_scaler, y=+Inf, label=round(u_g_n_b, 2), vjust=2, geom="label") +
      annotate(x=1, y=+Inf, label=round(cv_n_b, 2), vjust=2, geom="label")
 
@@ -328,9 +335,10 @@ if (nn != 5000 & simu.num != 4){
 load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_grid_extra.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
 
+results_grid_all <- results_grid_extra$result_summary
 # results_grid_all <- results_grid_summary(results_grid_extra)
 # results_grid_all <- rename_df(results_grid_all)
-# results_grid_all = add_bound(results_grid_all)
+results_grid_all = add_bound(results_grid_all)
 results_grid_all$method[results_grid_all$method == "U_G"] = "Undersmooth"
 
 # results_grid_all$MSE = results_grid_all$bias^2 + results_grid_all$SE^2
@@ -409,6 +417,11 @@ results_gam$result_summary <- rename_df(results_gam$result_summary)
 results_poly$result_summary <- rename_df(results_poly$result_summary)
 results_npcausal$result_summary <- rename_df(results_npcausal$result_summary)
 
+results_gam$MSE = results_gam$bias^2 + results_gam$oracle_SE^2
+results_poly$MSE = results_poly$bias^2 + results_poly$oracle_SE^2
+results_npcausal$MSE = results_npcausal$bias^2 + results_npcausal$oracle_SE^2
+
+
 colnames_overlap = intersect( intersect(names(results_df1), names(results_df2)), names(results_poly$result_summary))
 
 results_all <- rbind(results_gam$result_summary[, colnames_overlap], 
@@ -420,8 +433,8 @@ results_all <- rbind(results_gam$result_summary[, colnames_overlap],
 
 results_all = add_bound(results_all)
 
-results_all$MSE = results_all$bias^2 + results_all$SE^2
-results_all$oracle_MSE = results_all$bias^2 + results_all$oracle_SE^2
+
+results_all$MSE = results_all$bias^2 + results_all$oracle_SE^2
 ```
 
 
