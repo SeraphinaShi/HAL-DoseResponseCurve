@@ -99,7 +99,7 @@ run_simu_npcausal_rep <- function(simu.num, eval_points, y_type, n, rounds){
     mutate(method = "npcausal")
   
   results <- list(result_summary = result_summary,
-                  all_results = results_list$all_results)
+                  all_results = result_list)
   
   return(results)
 }
