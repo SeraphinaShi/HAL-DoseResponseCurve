@@ -86,6 +86,9 @@ if(part2){
   
   ## -------poly
   set.seed(123)
+  
+  n <- as.numeric(n)
+  
   results_npcausal <- run_simu_npcausal_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
   save.image(file=here("data", "rdata", paste("simu", simu.num, n, "npcausal.Rdata", sep="_")))
   
