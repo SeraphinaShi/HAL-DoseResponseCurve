@@ -83,7 +83,7 @@ run_simu_npcausal_rep <- function(simu.num, eval_points, y_type, n, rounds){
   
   result_summary <- result_all %>% 
     filter(SE != 0, ! is.na(y_hat)) %>% 
-    mutate(SE = SE/sqrt(nn)) %>%
+    mutate(SE = SE/sqrt(n)) %>%
     mutate(bias = abs(y_hat - psi0),
            bias_se_ratio = bias / SE,
            cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr),

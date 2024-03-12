@@ -63,26 +63,26 @@ if(part1){
 }
 
 if(part2){
-  ## -------apadt smoothness HAL
-  set.seed(123)
-  results_adapt <- run_simu_smoothness_adaptive_HAL_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
-  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "adapt.Rdata", sep="_")))
-  
-  rm(results_adapt)
-  
-  ## ------gam
-  set.seed(123)
-  results_gam <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "GAM")
-  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "GAM.Rdata", sep="_")))
-  
-  rm(results_gam)
-  
-  ## -------poly
-  set.seed(123)
-  results_poly <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "POLY")
-  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "poly.Rdata", sep="_")))
-  
-  rm(results_poly)
+  # ## -------apadt smoothness HAL
+  # set.seed(123)
+  # results_adapt <- run_simu_smoothness_adaptive_HAL_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
+  # save.image(file=here("data", "rdata", paste("simu", simu.num, n, "adapt.Rdata", sep="_")))
+  # 
+  # rm(results_adapt)
+  # 
+  # ## ------gam
+  # set.seed(123)
+  # results_gam <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "GAM")
+  # save.image(file=here("data", "rdata", paste("simu", simu.num, n, "GAM.Rdata", sep="_")))
+  # 
+  # rm(results_gam)
+  # 
+  # ## -------poly
+  # set.seed(123)
+  # results_poly <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "POLY")
+  # save.image(file=here("data", "rdata", paste("simu", simu.num, n, "poly.Rdata", sep="_")))
+  # 
+  # rm(results_poly)
   
   ## -------poly
   set.seed(123)

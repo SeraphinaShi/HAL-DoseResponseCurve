@@ -1287,8 +1287,6 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
 }
 
 
-
-
 plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_plot=NA, max_bias_sd=NA){
   
   
