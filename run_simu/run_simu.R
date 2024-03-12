@@ -6,9 +6,11 @@ part1 <- Sys.getenv("PART1")
 part2 <- Sys.getenv("PART2")
 part3 <- Sys.getenv("PART3")
 
+simu.num <- as.numeric(simu.num)
+n <- as.numeric(n)
+
 print(simu.num)
 print(n)
-
 
 library(here)
 library(dplyr)
@@ -27,7 +29,7 @@ set.seed(123)
 
 rep.num = 500
 
-eval_points = seq(0,5,0.25)
+eval_points = seq(0,5,0.2)
 
 
 ##========True curve
@@ -63,31 +65,29 @@ if(part1){
 }
 
 if(part2){
-  # ## -------apadt smoothness HAL
-  # set.seed(123)
-  # results_adapt <- run_simu_smoothness_adaptive_HAL_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
-  # save.image(file=here("data", "rdata", paste("simu", simu.num, n, "adapt.Rdata", sep="_")))
-  # 
-  # rm(results_adapt)
-  # 
-  # ## ------gam
-  # set.seed(123)
-  # results_gam <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "GAM")
-  # save.image(file=here("data", "rdata", paste("simu", simu.num, n, "GAM.Rdata", sep="_")))
-  # 
-  # rm(results_gam)
-  # 
-  # ## -------poly
-  # set.seed(123)
-  # results_poly <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "POLY")
-  # save.image(file=here("data", "rdata", paste("simu", simu.num, n, "poly.Rdata", sep="_")))
-  # 
-  # rm(results_poly)
+  ## -------apadt smoothness HAL
+  set.seed(123)
+  results_adapt <- run_simu_smoothness_adaptive_HAL_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "adapt.Rdata", sep="_")))
+
+  rm(results_adapt)
+
+  ## ------gam
+  set.seed(123)
+  results_gam <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "GAM")
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "GAM.Rdata", sep="_")))
+
+  rm(results_gam)
+
+  ## -------poly
+  set.seed(123)
+  results_poly <- run_simu_gam_poly_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num, method = "POLY")
+  save.image(file=here("data", "rdata", paste("simu", simu.num, n, "poly.Rdata", sep="_")))
+
+  rm(results_poly)
   
   ## -------poly
   set.seed(123)
-  
-  n <- as.numeric(n)
   
   results_npcausal <- run_simu_npcausal_rep(simu.num, eval_points, y_type = "binomial", n=n, rounds=rep.num)
   save.image(file=here("data", "rdata", paste("simu", simu.num, n, "npcausal.Rdata", sep="_")))

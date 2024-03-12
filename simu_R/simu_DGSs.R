@@ -6,6 +6,10 @@ expit <- function(x){
   return(exp(x)/(1+exp(x)))
 }
 
+# df = true_curve(simu.num = 4, N = 50000)
+# ggplot(df, aes(a, psi0)) + geom_line() + ylim(0,1)
+
+
 DGS <- function(simu, n, a = NA){
   if(simu == 1){
     
@@ -26,7 +30,7 @@ DGS <- function(simu, n, a = NA){
     }
     
     
-    Y <- as.numeric(U_Y < plogis(-5 + W + 2.25*A - 0.5 * W * A ))
+    Y <- as.numeric(U_Y < plogis(-3 + 0.5*W + 1.25*A - 0.5 * W * A ))
     
     # data frame
     O <- data.frame(W, A, Y)
@@ -51,7 +55,7 @@ DGS <- function(simu, n, a = NA){
     }
     
     
-    Y <- as.numeric(U_Y < plogis(-7 + 3*W + 5*sin(1.25*A^1.5) + 5*A + 3 * W * A ))
+    Y <- as.numeric(U_Y < plogis(-5 + 3*W + 5*sin(1.25*A^1.5) + 5*A + 3 * W * A ))
     
     # data frame
     O <- data.frame(W, A, Y)
@@ -75,7 +79,7 @@ DGS <- function(simu, n, a = NA){
       A <- rep(a, n)
     }
     
-    Y <- as.numeric(U_Y < plogis(-10 - 3*W + 4*A + 5*sin((0.8*A)^2-2.6)*as.numeric(A > 2)) )
+    Y <- as.numeric(U_Y < plogis(-4 - 2*W + 1.5*A + 1.5*sin((0.8*A)^2-2.56)*as.numeric(A > 2)) )
     
     # data frame
     O <- data.frame(W, A, Y)
@@ -99,7 +103,7 @@ DGS <- function(simu, n, a = NA){
       A <- rep(a, n)
     }
     
-    Y <- as.numeric(U_Y < plogis(-6 + W + 3.5*A*as.numeric(A >= 2) - 4*A*as.numeric(A >= 4) - 0.5 * W * A ))
+    Y <- as.numeric(U_Y < plogis(-2 + W + A*as.numeric(A >= 2) - A*as.numeric(A >= 4) - 0.5 * W * A ))
     
     # data frame
     O <- data.frame(W, A, Y)

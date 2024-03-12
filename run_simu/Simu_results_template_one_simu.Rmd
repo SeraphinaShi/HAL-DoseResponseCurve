@@ -97,12 +97,12 @@ nn=1000
 ```{r child = 'Simu_results_template_one_simu_one_n.Rmd'}
 ```
 
-## n = 5000
-```{r}
-nn=5000
-```
+<!-- ## n = 5000 -->
+<!-- ```{r} -->
+<!-- nn=5000 -->
+<!-- ``` -->
 
-```{r child = 'Simu_results_template_one_simu_one_n.Rmd'}
-```
+<!-- ```{r child = 'Simu_results_template_one_simu_one_n.Rmd'} -->
+<!-- ``` -->
 
 
