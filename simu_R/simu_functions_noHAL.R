@@ -162,11 +162,11 @@ run_simu_gam_poly_rep <- function(simu.num, eval_points, y_type, n, rounds,  met
            # cover_rate_bt = as.numeric(ci_lwr_bt <= psi0 & psi0 <= ci_upr_bt),
            cover_rate = as.numeric(ci_lwr <= psi0 & psi0 <= ci_upr)) %>% 
     group_by(a) %>% 
-    mutate(oracal_SE = sqrt(var(y_hat)),
-           oracal_bias_se_ratio = bias / oracal_SE,
-           oracal_ci_lwr = y_hat - 1.96 * oracal_SE,
-           oracal_ci_upr = y_hat + 1.96 * oracal_SE,
-           oracal_cover_rate = as.numeric(oracal_ci_lwr <= psi0 & psi0 <= oracal_ci_upr)) %>%
+    mutate(oracle_SE = sqrt(var(y_hat)),
+           oracle_bias_se_ratio = bias / oracle_SE,
+           oracle_ci_lwr = y_hat - 1.96 * oracle_SE,
+           oracle_ci_upr = y_hat + 1.96 * oracle_SE,
+           oracle_cover_rate = as.numeric(oracle_ci_lwr <= psi0 & psi0 <= oracle_ci_upr)) %>%
     summarise(across(where(is.numeric), mean)) %>% 
     ungroup() %>%
     mutate(method = method)

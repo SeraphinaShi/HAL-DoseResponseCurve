@@ -95,6 +95,9 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
 
   a_max <- max(df$a)
   
+  df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
+  
   p_lambda <- ggplot(data=df, aes(x=a)) +
     geom_line(aes(y=lambda_scaler, color=method), alpha = 0.7) +
     geom_point(aes(y=lambda_scaler, color=method), shape=17, size=2, alpha= 0.7) +
@@ -160,13 +163,13 @@ plot_performences_cv_ug_alla <- function(df, save_plot=NA, return_plot = "all"){
   df_bias_se <- df[! df$a %in% c(0,5), ]
   p_bias_se <- ggplot(df_bias_se, aes(x = a)) +  
     xlim(0,5) +
-    geom_line(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
-    geom_point(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) + 
-    geom_line(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
-    geom_point(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
-    labs(x="Treatment", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") + 
+    geom_line(aes(y = log_bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
+    geom_point(aes(y = log_bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) + 
+    geom_line(aes(y = log_oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = log_oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
+    labs(x="Treatment", y = "log(|Bias| / Standard Error)", title="(c) Log Bias-SE Ratio") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
-    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
     scale_color_manual(name='Selector',
                        breaks=c('CV', 'Undersmooth'),
                        values=c('CV'=color_cv, 'Undersmooth'=color_u_g)) +
@@ -286,7 +289,7 @@ estimation_qqplot_cv_ug_alla <- function(results_list, save_plot=NA){
   }
   
   df <- df[!is.na(df$a), ]
-  df <- df[df$a %in%  seq(from = 0.25, to = 4.75, by = 0.5),]
+  df <- df[df$a %in% seq(from = 0.2, to = 4.8, by = 0.4),]
   
   p <- ggplot(df, aes(sample = y_hat)) + 
     stat_qq() + stat_qq_line() +
@@ -303,7 +306,7 @@ estimation_qqplot_cv_ug_alla <- function(results_list, save_plot=NA){
   if(!any(is.na(save_plot))){
     for (i in 1:length(save_plot)) {
       save_loc <- save_plot[i]
-      ggsave(save_loc, plot=p, width = 12, height = 4, dpi = 800)
+      ggsave(save_loc, plot=p, width = 12, height = 3.5, dpi = 800)
     }
   }
   
@@ -316,6 +319,9 @@ plot_performences_adapt <- function(df, save_plot=NA){
   
   df$smooth_order = round(df$smooth_order, 4)
   df$smooth_order = factor(df$smooth_order)
+  
+  df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
   
   so_colors = c( "#2b6a99", "#A3A500", "#00B0F6", "#E76BF3", "#f16c23")
   if(sum(! unique(df$smooth_order) %in% 0:3) > 0) {
@@ -496,10 +502,10 @@ plot_performences_adapt <- function(df, save_plot=NA){
   df_bias_se <- df[! df$a %in% c(0,5), ]
   p_bias_se_e <- ggplot(df_bias_se, aes(x = a)) +  
     xlim(0,5) +
-    geom_line(aes(y = bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) +
-    geom_point(aes(y = bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) + 
-    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
-    labs(x="Treatment", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") + 
+    geom_line(aes(y = log_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) +
+    geom_point(aes(y = log_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) + 
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
+    labs(x="Treatment", y = "log(|Bias| / Standard Error)", title="(c) Log Bias-SE Ratio") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='smooth order',
                        breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
@@ -512,10 +518,10 @@ plot_performences_adapt <- function(df, save_plot=NA){
 
   p_bias_se_o <- ggplot(df_bias_se, aes(x = a)) +  
     xlim(0,5) +
-    geom_line(aes(y = oracle_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) +
-    geom_point(aes(y = oracle_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) + 
-    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
-    labs(x="Treatment", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") + 
+    geom_line(aes(y = log_oracle_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) +
+    geom_point(aes(y = log_oracle_bias_se_ratio, color=smooth_order, linetype=if_n_knots_default), alpha=0.7) + 
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
+    labs(x="Treatment", y = "log(|Bias| / Standard Error)", title="(c) Log Bias-SE Ratio") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='smooth order',
                        breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
@@ -562,9 +568,10 @@ plot_performences_adapt <- function(df, save_plot=NA){
 
 plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=NA){
   
-  curve_pnts <- sort(c(seq(from = 0.25, to = 4.75, by = 0.5), 2, 4)) 
-  
-  df <- df[df$a %in%  curve_pnts,]
+  curve_pnts <- seq(from = 0.2, to = 4.8, by = 0.4)
+
+  df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
   
   legend_undersmoothing = ggplot(df) +  
     geom_line(aes(x = lambda_scaler, y = y_hat, color = "Undersmooth"), lty=2) + 
@@ -584,7 +591,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
   legend = NA
   
   for (i in 1:length(curve_pnts)) {
-    df_a <- df %>% filter(a == curve_pnts[i])
+    df_a <- df %>% filter(abs(a - curve_pnts[i]) < 0.1)
     
     p_est_avg = ggplot(df_a) +  
       geom_ribbon(aes(x = lambda_scaler, ymin=ci_lwr, ymax=ci_upr, color='Delta', fill = 'Delta'),  alpha=0.5) +
@@ -640,11 +647,11 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
       theme(legend.position='none')
       
     p_bias_se <- ggplot(df_a, aes(x = lambda_scaler)) + 
-      geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
-      geom_point(aes(y = bias_se_ratio, color = "Delta")) +
-      geom_line(aes(y = oracle_bias_se_ratio, color = "Oracle")) + 
-      geom_point(aes(y = oracle_bias_se_ratio, color = "Oracle")) +
-      geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+      geom_line(aes(y = log_bias_se_ratio, color = "Delta")) + 
+      geom_point(aes(y = log_bias_se_ratio, color = "Delta")) +
+      geom_line(aes(y = log_oracle_bias_se_ratio, color = "Oracle")) + 
+      geom_point(aes(y = log_oracle_bias_se_ratio, color = "Oracle")) +
+      geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
                          values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
@@ -712,7 +719,7 @@ plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=N
   g2 <- arrangeGrob(grobs = p_bias_list, nrow=1, left = grid::textGrob("|Bias|", rot=90, gp=gpar(fontsize=12)))
   g3 <- arrangeGrob(grobs = p_se_list, nrow=1, left = grid::textGrob("Standard Error", rot=90, gp=gpar(fontsize=12)))
   g4 <- arrangeGrob(grobs = p_mse_list, nrow=1, left = grid::textGrob("MSE", rot=90, gp=gpar(fontsize=12)))
-  g5 <- arrangeGrob(grobs = p_bias_se_list, nrow=1, left = grid::textGrob("Bias-SE Ratio", rot=90, gp=gpar(fontsize=12)))
+  g5 <- arrangeGrob(grobs = p_bias_se_list, nrow=1, left = grid::textGrob("Log Bias-SE Ratio", rot=90, gp=gpar(fontsize=12)))
   g6 <- arrangeGrob(grobs = p_cr_list, nrow=1, left = grid::textGrob("Coverage rate", rot=90, gp=gpar(fontsize=12)) )#,
   # bottom = grid::textGrob("lambda scalers", gp=gpar(fontsize=15)))
   
@@ -789,13 +796,14 @@ results_grid_summary <- function(results_grid_in){
 
 plot_compare_methods_performances <- function(df, save_plot=NA){
   
-  color_0_hal = '#619CFF'
-  color_u_adapt = "#85c876"
+  color_u_hal = "#85c876"
   color_gam = '#f7b722'
   color_poly = '#ef9db6'
   color_npcausal =  "blueviolet"
   
-  df <- df[df$method %in% c("0_HAL", "U_SOadapt_HAL", "GAM", "Poly", "npcausal"), ]
+  df <- df[df$method %in% c("U_1S_HAL", "GAM", "Poly", "npcausal"), ]
+  df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
   
   a_max <- max(df$a)
   
@@ -814,11 +822,11 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_y_continuous(limits = c(ci_min, ci_max)) + 
       
       scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                         breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_fill_manual(name='Method',
-                        breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
-                        values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                        breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
+                        values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -837,8 +845,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
     labs(title="(d) Absolute Bias", x="Treatment", y="|Bias|") +
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Method',
-                       breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
-                       values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                       breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
+                       values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
     theme_bw()
   
   legend <- get_legend(p_bias)
@@ -866,8 +874,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       # scale_y_continuous(limits = c(se_min, se_max)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                         breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
@@ -895,8 +903,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       # scale_y_continuous(limits = c(se_min, se_max)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                         breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
@@ -912,25 +920,25 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   df_bias_se <- df[! df$a %in% c(0,5), ]
   p_bias_sd[[1]] <- ggplot(df_bias_se, aes(x = a)) +  
     xlim(0,5) +
-    geom_line(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
-    geom_point(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
-    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
-    labs(y = "|Bias| / Standard Error", title = "(c.1) Bias-SE Ratio [Delta]") 
+    geom_line(aes(y = log_bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
+    geom_point(aes(y = log_bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
+    labs(y = "log(|Bias| / Standard Error)", title = "(c.1) Log Bias-SE Ratio [Delta]") 
   
   p_bias_sd[[2]] <- ggplot(df_bias_se, aes(x = a)) +  
     xlim(0,5) +
-    geom_line(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
-    geom_point(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
-    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
-    labs(y="", title = "(c.1) Bias-SE Ratio [Oracle]") 
+    geom_line(aes(y = log_oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = log_oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
+    labs(y="", title = "(c.1) Log Bias-SE Ratio [Oracle]") 
   
   for(i in 1:2){
     p_bias_sd[[i]] <- p_bias_sd[[i]] +  
       labs(x='Treatment') +
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                         breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -960,8 +968,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_y_continuous(limits = c(0, 1)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', "0_HAL", 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, "0_HAL"=color_0_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                         breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -1041,10 +1049,12 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
 
 plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
   
-  color_u_adapt = "#85c876"
+  color_u_hal = "#85c876"
   color_npcausal =  "blueviolet"
   
-  df <- df[df$method %in% c("U_SOadapt_HAL", "npcausal"), ]
+  df <- df[df$method %in% c("U_1S_HAL", "npcausal"), ]
+  df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
   
   a_max <- max(df$a)
   
@@ -1062,11 +1072,11 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_y_continuous(limits = c(ci_min, ci_max)) + 
       scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+                         breaks=c('U_1S_HAL', 'npcausal'),
+                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_fill_manual(name='Method',
-                        breaks=c('U_SOadapt_HAL', 'npcausal'),
-                        values=c('U_SOadapt_HAL'=color_u_adapt,  'npcausal'=color_npcausal )) +
+                        breaks=c('U_1S_HAL', 'npcausal'),
+                        values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -1085,8 +1095,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
     labs(title="(d) Absolute Bias", x="Treatment", y="|Bias|") +
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Method',
-                       breaks=c('U_SOadapt_HAL', 'npcausal'),
-                       values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+                       breaks=c('U_1S_HAL', 'npcausal'),
+                       values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
     theme_bw()
   
   legend <- get_legend(p_bias)
@@ -1114,8 +1124,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       # scale_y_continuous(limits = c(se_min, se_max)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+                         breaks=c('U_1S_HAL', 'npcausal'),
+                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
@@ -1143,8 +1153,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       # scale_y_continuous(limits = c(se_min, se_max)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+                         breaks=c('U_1S_HAL', 'npcausal'),
+                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
@@ -1161,25 +1171,25 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
     
   p_bias_sd[[1]] <- ggplot(df_bias_se, aes(x = a)) +  
     xlim(0,5) +
-    geom_line(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
-    geom_point(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
-    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
-    labs(y = "|Bias| / Standard Error", title = "(c.1) Bias-SE Ratio [Delta]") 
+    geom_line(aes(y = log_bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
+    geom_point(aes(y = log_bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
+    labs(y = "log(|Bias| / Standard Error)", title = "(c.1) Log Bias-SE Ratio [Delta]") 
   
   p_bias_sd[[2]] <- ggplot(df_bias_se, aes(x = a)) +  
     xlim(0,5) +
-    geom_line(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
-    geom_point(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
-    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
-    labs(y="", title = "(c.1) Bias-SE Ratio [Oracle]") 
+    geom_line(aes(y = log_oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = log_oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
+    labs(y="", title = "(c.1) Log Bias-SE Ratio [Oracle]") 
   
   for(i in 1:2){
     p_bias_sd[[i]] <- p_bias_sd[[i]] +  
       labs(x='Treatment') +
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+                         breaks=c('U_1S_HAL', 'npcausal'),
+                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -1209,8 +1219,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_y_continuous(limits = c(0, 1)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_SOadapt_HAL', 'npcausal'),
-                         values=c('U_SOadapt_HAL'=color_u_adapt, 'npcausal'=color_npcausal)) +
+                         breaks=c('U_1S_HAL', 'npcausal'),
+                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -1289,10 +1299,10 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
 
 plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_plot=NA, max_bias_sd=NA){
   
+  curve_pnts <- seq(from = 1, to = 24, by = 2)/5 # seq(from = 0.2, to = 4.8, by = 0.4)
   
-  curve_pnts <- sort(c(seq(from = 0.25, to = 4.75, by = 0.5), 2, 4)) 
-  
-  df <- df[df$a %in%  curve_pnts,]
+  df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
   
   legend_undersmoothing = ggplot(df) +  
     geom_line(aes(x = lambda, y = y_hat, color = "Undersmooth"), lty=2) + 
@@ -1312,7 +1322,7 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
   legend = NA
   
   for (i in 1:length(curve_pnts)) {
-    df_a <- df %>% filter(a == curve_pnts[i])
+    df_a <- df %>% filter(abs(a - curve_pnts[i]) < 0.1)
     
     p_est_avg = ggplot(df_a) +  
       geom_ribbon(aes(x = lambda, ymin=ci_lwr, ymax=ci_upr, color='Delta', fill = 'Delta'),  alpha=0.5) +
@@ -1369,11 +1379,11 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
     
 
     p_bias_se <- ggplot(df_a, aes(x = lambda)) + 
-      geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
-      geom_point(aes(y = bias_se_ratio, color = "Delta")) +
-      geom_line(aes(y = oracle_bias_se_ratio, color = "Oracle")) + 
-      geom_point(aes(y = oracle_bias_se_ratio, color = "Oracle")) +
-      geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+      geom_line(aes(y = log_bias_se_ratio, color = "Delta")) + 
+      geom_point(aes(y = log_bias_se_ratio, color = "Delta")) +
+      geom_line(aes(y = log_oracle_bias_se_ratio, color = "Oracle")) + 
+      geom_point(aes(y = log_oracle_bias_se_ratio, color = "Oracle")) +
+      geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
       scale_color_manual(name='Method',
                          breaks=c('Oracle', 'Delta'),
                          values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
@@ -1441,7 +1451,7 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
   g2 <- arrangeGrob(grobs = p_bias_list, nrow=1, left = grid::textGrob("|Bias|", rot=90, gp=gpar(fontsize=12)))
   g3 <- arrangeGrob(grobs = p_se_list, nrow=1, left = grid::textGrob("Standard Error", rot=90, gp=gpar(fontsize=12)))
   g4 <- arrangeGrob(grobs = p_mse_list, nrow=1, left = grid::textGrob("MSE", rot=90, gp=gpar(fontsize=12)))
-  g5 <- arrangeGrob(grobs = p_bias_se_list, nrow=1, left = grid::textGrob("Bias-SE Ratio", rot=90, gp=gpar(fontsize=12)))
+  g5 <- arrangeGrob(grobs = p_bias_se_list, nrow=1, left = grid::textGrob("Log Bias-SE Ratio", rot=90, gp=gpar(fontsize=12)))
   g6 <- arrangeGrob(grobs = p_cr_list, nrow=1, left = grid::textGrob("Coverage rate", rot=90, gp=gpar(fontsize=12)) )#,
   # bottom = grid::textGrob("lambda scalers", gp=gpar(fontsize=15)))
   
@@ -1474,6 +1484,8 @@ plot_perforences_grid_lambda <- function(df, u_g_lambda=NA, cv_lambda=NA, save_p
 
 plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA, save_plot=NA, max_bias_sd=NA){
   
+  df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
   df_a = df[df$a == a, ]
   
   legend_undersmoothing = ggplot(df_a) +  
@@ -1542,11 +1554,11 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
     labs(x="Penalty", y = "MSE", title="(f) Mean Squared Error") 
   
   p_bias_se <- ggplot(df_a, aes(x = lambda)) + 
-    geom_line(aes(y = bias_se_ratio, color = "Delta")) + 
-    geom_point(aes(y = bias_se_ratio, color = "Delta")) +
-    geom_line(aes(y = oracle_bias_se_ratio, color = "Oracle")) + 
-    geom_point(aes(y = oracle_bias_se_ratio, color = "Oracle")) +
-    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+    geom_line(aes(y = log_bias_se_ratio, color = "Delta")) + 
+    geom_point(aes(y = log_bias_se_ratio, color = "Delta")) +
+    geom_line(aes(y = log_oracle_bias_se_ratio, color = "Oracle")) + 
+    geom_point(aes(y = log_oracle_bias_se_ratio, color = "Oracle")) +
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
     scale_color_manual(name='Method',
                        breaks=c('Oracle', 'Delta'),
                        values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
@@ -1554,7 +1566,7 @@ plot_perforences_grid_lambda_a <- function(df, a=1, u_g_lambda=NA, cv_lambda=NA,
     theme_bw() +
     theme(axis.title=element_blank(),
           legend.position='none') + 
-    labs(x="Penalty", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") 
+    labs(x="Penalty", y = "log(|Bias| / Standard Error)", title="(c) Log Bias-SE Ratio") 
   
   if(!is.na(max_bias_sd)){
     p_bias_se <- p_bias_se + ylim(0,max_bias_sd)
@@ -1634,6 +1646,8 @@ plot_performences_knots <- function(df, save_plot=NA, return_plot = "all"){
   color_u_g_10 = "#1b7c3d"
   
   a_max <- max(df$a)
+  df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
   
   p_lambda <- ggplot(data=df, aes(x=a)) +
     geom_line(aes(y=lambda_scaler, color=method), alpha = 0.7) +
@@ -1700,13 +1714,13 @@ plot_performences_knots <- function(df, save_plot=NA, return_plot = "all"){
   df_bias_se <- df[! df$a %in% c(0,5), ]
   p_bias_se <- ggplot(df_bias_se, aes(x = a)) +  
     xlim(0,5) +
-    geom_line(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
-    geom_point(aes(y = bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) + 
-    geom_line(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
-    geom_point(aes(y = oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
-    labs(x="Treatment", y = "|Bias| / Standard Error", title="(c) Bias-SE Ratio") + 
+    geom_line(aes(y = log_bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) +
+    geom_point(aes(y = log_bias_se_ratio, color=method, linetype='Delta'), alpha=0.7) + 
+    geom_line(aes(y = log_oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) +
+    geom_point(aes(y = log_oracle_bias_se_ratio, color=method, linetype='Oracle'), alpha=0.7) + 
+    labs(x="Treatment", y = "log(|Bias| / Standard Error)", title="(c) Log Bias-SE Ratio") + 
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
-    geom_hline(aes(yintercept=1/log(nn)), linetype = "dashed") +
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
     scale_color_manual(name='Selector',
                        breaks=c('CV_knots20', 'Undersmooth_knots20','CV_knots10', 'Undersmooth_knots10'),
                        values=c('CV_knots20'=color_cv, 'Undersmooth_knots20'=color_u_g,'CV_knots10'=color_cv_10, 'Undersmooth_knots10'=color_u_g_10)) +

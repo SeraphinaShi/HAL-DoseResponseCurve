@@ -43,8 +43,8 @@ if(simu.num == 4){
       geom_line(data=psi0_all_1, aes(x=a, y=psi0)) + 
       geom_line(data=psi0_all_0_, aes(x=a, y=psi0)) + 
       geom_point(data=psi0_pnt, aes(x=a, y=psi0)) + 
-      geom_point(aes(x = 2, y = 0), shape=1) + 
-      geom_point(aes(x = 4, y = 1), shape=1) + 
+      geom_point(aes(x = 2, y = psi0_all$psi0[psi0_all$a == max(psi0_all$a[psi0_all$a < 2])]), shape=1) + 
+      geom_point(aes(x = 4, y = psi0_all$psi0[psi0_all$a == max(psi0_all$a[psi0_all$a < 4])]), shape=1) + 
       ylim(0,1) +
       labs(x="Treatment", y="Outcome",
            title = "Causal Dose–Response Curve") +
