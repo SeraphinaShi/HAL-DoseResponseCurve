@@ -21,87 +21,103 @@
 #' @param boundResults A \code{boolean} indicating whether bound the predicted 
 #' values and confidence intervals by the minimum and maximum of the provided Y.
 
-fit_UHAL_DRC <- function(dat, y_var_name, trt_var_name, family, curvePoints = NA, smoothOrderAdapt = FALSE, smoothOrder = 1,  baseNumKnots = 20, boundResults = TRUE){
-  
-  n <- length(Y)
+fit_UHAL_DRC <- function(
+    dat, y_var_name, trt_var_name,
+    family, 
+    curvePoints = NULL,
+    Unsersmoothing = TRUE,
+    smoothOrderAdapt = FALSE, smoothOrder = 1,
+    baseNumKnots = NA,
+    boundResults = TRUE
+    ){
 
   Y <- as.numeric(as.matrix(dat %>% select(all_of(y_var_name))))
-  
+  n <- length(Y)
   
   x_names = names(dat)[names(dat) != y_var_name]
-  
   X <- dat %>% 
     select(all_of(x_names)) %>% 
     mutate_if(sapply(., is.factor), as.numeric)
   
   names(X)[names(X) == trt_var_name] = "A"
 
-  if(is.na(curvePoints)){
-    curvePoints =  seq(min(X$A), max(X$A), by = 0.1)
+  if(is.null(curvePoints)){
+    curvePoints =  seq(min(X$A), max(X$A), length.out = 20)
   }
   
-  # 1. fit undersmoothed HAL
-  ## fit CV HAL
+  # 1. fit CV HAL
   if(smoothOrderAdapt){
-    dSL_fit <- fit_SL_smoothness_adaptive_HAL(dat, X, Y, x_names, y_name, family)
-
-    sl_pick_idx = which(dSL_fit$coefficients==1)
+    dSL_fit_list <- fit_SL_smoothness_adaptive_HAL(dat, X, Y, x_names, y_name, family)
     
-    hal_CV = dSL_fit$learner_fits[[sl_pick_idx]]$fit_object
+    dSL_fit <- dSL_fit_list$dSL_fit
     
-    smoothOrder = smooth_orders[sl_pick_idx]
-    n_knots_default_pick = as.numeric(num_knots[sl_pick_idx] == "default")
+    sl_pick_idx <- which(dSL_fit$coefficients==1)
+    
+    hal_CV <- dSL_fit$learner_fits[[sl_pick_idx]]$fit_object
+    
+    smoothOrder <- dSL_fit_list$smooth_orders_candidates[sl_pick_idx]
+    baseNumKnots <- dSL_fit_list$num_knots_candidates[sl_pick_idx]
     
   } else {
-    
-    hal_CV <- fit_hal(X = X, Y = Y, family = family,
-                      return_x_basis = TRUE,
-                      num_knots = hal9001:::num_knots_generator(
-                        max_degree = ifelse(ncol(X) >= 20, 2, 3),
-                        smoothness_orders = smoothOrder,
-                        base_num_knots_0 = baseNumKnots,
-                        base_num_knots_1 = baseNumKnots # max(100, ceiling(sqrt(n)))
-                      )
-    )
+    if(is.na(baseNumKnots)){
+      hal_CV <- fit_hal(X = X, Y = Y, family = family,
+                        return_x_basis = TRUE,
+                        smoothness_orders = smoothOrder
+                        )
+    } else {
+      hal_CV <- fit_hal(X = X, Y = Y, family = family,
+                        return_x_basis = TRUE,
+                        num_knots = hal9001:::num_knots_generator(
+                          max_degree = ifelse(ncol(X) >= 20, 2, 3),
+                          smoothness_orders = smoothOrder,
+                          base_num_knots_0 = baseNumKnots,
+                          base_num_knots_1 = baseNumKnots # max(100, ceiling(sqrt(n)))
+                        )
+      )
+    }
   }
   
-  ## Unsersmoothing
-  CV_nonzero_col <- which(hal_CV$coefs[-1] != 0)
-  if (length(CV_nonzero_col) == 0){
-    hal_fit = hal_CV
-  }else{
-    CV_basis_mat <- as.matrix(hal_CV$x_basis)
-    CV_basis_mat <- as.matrix(CV_basis_mat[, CV_nonzero_col])
-    
-    hal_undersmooth <- undersmooth_hal(X, Y,
-                                       fit_init = hal_CV,
-                                       family = family)
-    
-    lambda_u_g = hal_undersmooth$lambda_under
-    
-    if(is.na(lambda_u_g)){
+  ## 2. Unsersmoothing
+  
+  if(!Unsersmoothing) {
+    hal_fit <- hal_CV
+  } else {
+    CV_nonzero_col <- which(hal_CV$coefs[-1] != 0)
+    if (length(CV_nonzero_col) == 0){
       hal_fit <- hal_CV
-    } else {
-      if(smoothOrderAdapt == TRUE & n_knots_default_pick == 1) {
-        hal_fit <- fit_hal(X = X, Y = Y, family = family,
-                           smoothness_orders = smoothOrder,
-                           return_x_basis = TRUE,
-                           fit_control = list(cv_select = FALSE),
-                           lambda = lambda_u_g)
-      } else {
-        hal_fit <- fit_hal(X = X, Y = Y, family = family,
-                           smoothness_orders = smoothOrder,
-                           return_x_basis = TRUE,
-                           fit_control = list(cv_select = FALSE),
-                           lambda = lambda_u_g,
-                           num_knots = hal9001:::num_knots_generator(
-                             max_degree = ifelse(ncol(X) >= 20, 2, 3), 
-                             smoothness_orders = smoothOrder,
-                             base_num_knots_0 = baseNumKnots,
-                             base_num_knots_1 = baseNumKnots  
-                           ))
-      }
+    }else{
+      CV_basis_mat <- as.matrix(hal_CV$x_basis)
+      CV_basis_mat <- as.matrix(CV_basis_mat[, CV_nonzero_col])
       
+      hal_undersmooth <- undersmooth_hal(X, Y,
+                                         fit_init = hal_CV,
+                                         family = family)
+      
+      lambda_u_g = hal_undersmooth$lambda_under
+      
+      if(is.na(lambda_u_g)){
+        hal_fit <- hal_CV
+      } else {
+        if(baseNumKnots == "default" | is.na(baseNumKnots)){
+          hal_fit <- fit_hal(X = X, Y = Y, family = family,
+                             smoothness_orders = smoothOrder,
+                             return_x_basis = TRUE,
+                             fit_control = list(cv_select = FALSE),
+                             lambda = lambda_u_g)
+        } else {
+          hal_fit <- fit_hal(X = X, Y = Y, family = family,
+                             smoothness_orders = smoothOrder,
+                             return_x_basis = TRUE,
+                             fit_control = list(cv_select = FALSE),
+                             lambda = lambda_u_g,
+                             num_knots = hal9001:::num_knots_generator(
+                               max_degree = ifelse(ncol(X) >= 20, 2, 3), 
+                               smoothness_orders = smoothOrder,
+                               base_num_knots_0 = baseNumKnots,
+                               base_num_knots_1 = baseNumKnots  
+                             ))
+        }
+      }
     }
   }
   
@@ -136,9 +152,9 @@ fit_UHAL_DRC <- function(dat, y_var_name, trt_var_name, family, curvePoints = NA
     psi_hat_pnt <- apply_bounds(psi_hat_pnt, "ci_lwr", bounds)
     psi_hat_pnt <- apply_bounds(psi_hat_pnt, "ci_upr", bounds)
   }
-
-
-  return(psi_hat_pnt)
+  
+  return(list(curve_est = psi_hat_pnt,
+              hal_fit = hal_fit))
 }
 
 
