@@ -47,26 +47,28 @@ if(simu.num == 4){
       geom_point(aes(x = 4, y = psi0_all$psi0[psi0_all$a == max(psi0_all$a[psi0_all$a < 4])]), shape=1) + 
       ylim(0,1) +
       labs(x="Treatment", y="Outcome",
-           title = "Causal Dose–Response Curve") +
+           title = "Simulation 4") +
           theme(plot.title = element_text(hjust = 0.5),
                 panel.grid.major.x = element_blank(),
-                axis.text = element_text(size=7)) +
-    theme_bw()
+                axis.text = element_text(size=20)) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
 } else {
   ggplot() +
     geom_line(data=psi0_all, aes(x=a, y=psi0)) + 
     geom_point(data=psi0_pnt, aes(x=a, y=psi0)) + 
     ylim(0,1) +
     labs(x="Treatment", y="Outcome",
-           title = "Causal Dose–Response Curve") +
+           title = "Simulation 2") +
         theme(plot.title = element_text(hjust = 0.5),
-              panel.grid.major.x = element_blank(),
-              axis.text = element_text(size=7)) +
-  theme_bw()
+                panel.grid.major.x = element_blank(),
+                axis.text = element_text(size=20)) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
 
 }
 
-ggsave(here(getwd(), "plots", paste0("simu_sys", simu.num, "_psi0.png")),  width = 5, height = 4, dpi = 1000)
+ggsave(here(getwd(), "plots", paste0("simu_sys", simu.num, "_psi0.png")),  width = 4, height = 3.2, dpi = 1000)
 ```
 
 
@@ -97,12 +99,12 @@ nn=1000
 ```{r child = 'Simu_results_template_one_simu_one_n.Rmd'}
 ```
 
-<!-- ## n = 5000 -->
-<!-- ```{r} -->
-<!-- nn=5000 -->
-<!-- ``` -->
+## n = 5000
+```{r}
+nn=5000
+```
 
-<!-- ```{r child = 'Simu_results_template_one_simu_one_n.Rmd'} -->
-<!-- ``` -->
+```{r child = 'Simu_results_template_one_simu_one_n.Rmd'}
+```
 
 

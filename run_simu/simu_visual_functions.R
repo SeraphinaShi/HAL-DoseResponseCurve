@@ -313,6 +313,120 @@ estimation_qqplot_cv_ug_alla <- function(results_list, save_plot=NA){
   return(p)
 }
 
+plot_performences_adapt_small <- function(df, save_plot=NA){
+  
+  df$smooth_order = round(df$smooth_order, 4)
+  df$smooth_order = factor(df$smooth_order)
+  
+  df <- df %>% 
+    mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio)) %>%
+    filter(if_n_knots_default == 0)
+  
+  so_colors = c( "#9271B1", "#79BD58", "#00B0F6", "#F4A7C1")
+  
+  if(sum(! unique(df$smooth_order) %in% 0:3) > 0) {
+    mean_sl_pick_SO = unique(df$smooth_order)[! unique(df$smooth_order) %in% 0:3]
+  } else {
+    mean_sl_pick_SO = unique(df$smooth_order[df$sl_pick==1])
+    so_colors[which(0:3 == mean_sl_pick_SO) ] = "#79BD58"
+  }
+  
+  
+  a_max <- max(df$a)
+  
+  p_est_avg <- ggplot(data=df, aes(x=a)) +
+    geom_line(aes(y=psi0), color="black") +
+    geom_ribbon(aes(ymin=oracle_ci_lwr, ymax=oracle_ci_upr, color=smooth_order, fill=smooth_order),  alpha=0.3) +
+    geom_point(aes(y=psi0), color = "black", alpha = 0.8) +
+    geom_point(aes(y=y_hat, color=smooth_order), shape=17, size=2, alpha= 0.5) +
+    labs(x="Treatment", y="Outcome", title = "(a) Estimation & CI") +
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    theme_bw() + 
+    scale_color_manual(name='smooth order',
+                       breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
+                       values = so_colors) +
+    scale_fill_manual(name='smooth order',
+                      breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
+                      values=so_colors) +
+    theme(legend.position='none')
+ 
+  ymin_cr = max(0.95, min(df$oracle_cover_rate))
+  p_cr <- ggplot(df, aes(x = a)) +  
+    geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=ymin_cr,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
+    geom_line(aes(y = oracle_cover_rate, color=smooth_order), alpha=0.7) +
+    geom_point(aes(y = oracle_cover_rate, color=smooth_order), alpha=0.7) + 
+    labs(x="Treatment", y = "Coverage Rate", title="(b)CI Coverage Rate") + 
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_color_manual(name='smooth order',
+                       breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
+                       values=so_colors) +
+    theme_bw() +
+    theme(legend.position='none') 
+  
+  p_mse <- ggplot(df, aes(x = a)) +  
+    geom_line(aes(y = MSE, color=smooth_order),alpha=0.7) +
+    geom_point(aes(y = MSE, color=smooth_order),alpha=0.7) + 
+    labs(x="Treatment", y = "MSE", title="(f) MSE") + 
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    theme_bw() + 
+    guides(color = guide_legend(nrow = 3, byrow = F)) +
+    scale_color_manual(name='smooth order',
+                       breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
+                       values=so_colors) +
+    theme(legend.position='none')
+  
+  
+  p_bias <- ggplot(df, aes(x = a, y = bias, color=smooth_order)) +  
+    geom_line() +
+    geom_point() + 
+    labs(x="Treatment", y = "|Bias|", title="(d) Absolute Bias") + 
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    theme_bw() +
+    theme(legend.position='none') + 
+    scale_color_manual(name='smooth order',
+                       breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
+                       values=so_colors) 
+  
+  p_se <- ggplot(df, aes(x = a)) +  
+    geom_line(aes(y = oracle_SE, color=smooth_order),alpha=0.7) +
+    geom_point(aes(y = oracle_SE, color=smooth_order),alpha=0.7) + 
+    # labs(title="Standard Error, Delta-method") +
+    labs(x="Treatment", y = "SE", title="(e) Standard Error") + 
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    theme_bw() + 
+    theme(legend.position='bottom') +
+    guides(color=guide_legend(nrow=1, byrow=TRUE))  +
+    scale_color_manual(name='Smoothness order',
+                       breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
+                       values=so_colors) 
+
+  
+  legend <- get_legend(p_se)
+  p_se <- p_se + theme(legend.position='none')
+  
+  
+  df_bias_se <- df[! df$a %in% c(0,5), ]
+  p_bias_se <- ggplot(df_bias_se, aes(x = a)) +  
+    xlim(0,5) +
+    geom_line(aes(y = log_oracle_bias_se_ratio, color=smooth_order), alpha=0.7) +
+    geom_point(aes(y = log_oracle_bias_se_ratio, color=smooth_order), alpha=0.7) + 
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
+    labs(x="Treatment", y = "log(|Bias| / SE)", title="(c) Log Bias-SE Ratio") + 
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    scale_color_manual(name='smooth order',
+                       breaks=c("0", "1", "2", "3", as.character(mean_sl_pick_SO)),
+                       values=so_colors) +
+    theme_bw() +
+    theme(legend.position='none') 
+  
+  
+  plots <- list(p_est_avg, p_cr, p_bias_se, p_bias, p_se, p_mse, legend)
+
+  return(plots)
+  
+}
 
 
 plot_performences_adapt <- function(df, save_plot=NA){
@@ -323,14 +437,14 @@ plot_performences_adapt <- function(df, save_plot=NA){
   df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
                       log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
   
-  so_colors = c( "#2b6a99", "#A3A500", "#00B0F6", "#E76BF3", "#f16c23")
+  so_colors = c( "#FFDE18", "#F4A7C1", "#00B0F6", "#A77852", "#79BD58")
+  
   if(sum(! unique(df$smooth_order) %in% 0:3) > 0) {
     mean_sl_pick_SO = unique(df$smooth_order)[! unique(df$smooth_order) %in% 0:3]
   } else {
     mean_sl_pick_SO = unique(df$smooth_order[df$sl_pick==1])
-    so_colors[which(0:3 == mean_sl_pick_SO) ] = "#f16c23"
+    so_colors[which(0:3 == mean_sl_pick_SO) ] = "#79BD58"
   }
-  
   
   df$if_n_knots_default = round(df$if_n_knots_default, 4)
   df$if_n_knots_default = factor(df$if_n_knots_default)
@@ -384,6 +498,7 @@ plot_performences_adapt <- function(df, save_plot=NA){
     scale_linetype_manual(name='default number of knots',
                           breaks=c("0", "1", as.character(mean_sl_pick_if_n_knots_default)),
                           values=line_types) 
+  
   ymin_cr_e = max(0.95, min(df$cover_rate))
   
   p_cr_e <- ggplot(df, aes(x = a)) +  
@@ -563,7 +678,185 @@ plot_performences_adapt <- function(df, save_plot=NA){
   
 }
 
-
+plot_perforences_grid_small <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=NA){
+  
+  curve_pnts <- seq(0.4,5,1)
+  
+  df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
+  
+  legend_undersmoothing = ggplot(df) +  
+    geom_line(aes(x = lambda_scaler, y = y_hat, color = "Undersmooth"), lty=2) + 
+    geom_line(aes(x = lambda_scaler, y = y_hat, color = "CV"), lty=2) + 
+    theme_bw() +
+    scale_colour_manual(name="Selector",
+                        values=c(Undersmooth= "#f16c23", CV="#2b6a99" )) #, Local="#619CFF",
+  legend_undersmoothing <- get_legend(legend_undersmoothing)
+  
+  p_est_avg_list = list()
+  p_bias_list = list()
+  p_se_list = list()
+  p_mse_list = list()
+  p_bias_se_list = list()
+  p_cr_list = list()
+  # p_n_basis_list = list()
+  legend = NA
+  
+  for (i in 1:length(curve_pnts)) {
+    df_a <- df %>% filter(abs(a - curve_pnts[i]) < 0.1)
+    
+    p_est_avg = ggplot(df_a) +  
+      geom_ribbon(aes(x = lambda_scaler, ymin=ci_lwr, ymax=ci_upr, color='Delta', fill = 'Delta'),  alpha=0.5) +
+      geom_ribbon(aes(x = lambda_scaler, ymin=oracle_ci_lwr, ymax=oracle_ci_upr,  color='Oracle', fill = 'Oracle'),  alpha=0.5) +
+      geom_line(aes(x = lambda_scaler, y = y_hat), color = "grey") + 
+      geom_point(aes(x = lambda_scaler, y = y_hat)) + 
+      geom_hline(aes(yintercept=psi0)) + 
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      scale_color_manual(breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
+      scale_fill_manual(breaks=c('Oracle', 'Delta'),
+                        values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
+      theme_bw() +
+      labs(x = "", title = paste0('a = ', curve_pnts[i])) +
+      theme(axis.title=element_blank(),
+            plot.title = element_text(hjust = 0.5),
+            legend.position='none')
+    
+    
+    p_bias <- ggplot(df_a, aes(x = lambda_scaler, y = bias)) +  
+      geom_line(color = "grey") + 
+      geom_point() + 
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      theme_bw()+
+      theme(axis.title=element_blank())
+    
+    p_se <- ggplot(df_a, aes(x = lambda_scaler)) +  
+      geom_line(aes(y = SE, color='Delta')) + 
+      geom_point(aes(y = SE, color='Delta')) + 
+      geom_line(aes(y = oracle_SE, color='Oracle')) + 
+      geom_point(aes(y = oracle_SE, color='Oracle')) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      scale_color_manual(name='Method',
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
+      theme_bw()+
+      theme(axis.title=element_blank())
+    
+    legend <- get_legend(p_se)
+    p_se <- p_se + theme(legend.position='none')
+    
+    p_mse <- ggplot(df_a, aes(x = lambda_scaler)) +  
+      # geom_line(aes(y = MSE, color='Delta')) + 
+      # geom_point(aes(y = MSE, color='Delta')) + 
+      geom_line(aes(y = MSE, color='Oracle')) + 
+      geom_point(aes(y = MSE, color='Oracle')) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      scale_color_manual(name='Method',
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
+      theme_bw()+
+      theme(axis.title=element_blank()) +
+      theme(legend.position='none')
+    
+    p_bias_se <- ggplot(df_a, aes(x = lambda_scaler)) + 
+      geom_line(aes(y = log_bias_se_ratio, color = "Delta")) + 
+      geom_point(aes(y = log_bias_se_ratio, color = "Delta")) +
+      geom_line(aes(y = log_oracle_bias_se_ratio, color = "Oracle")) + 
+      geom_point(aes(y = log_oracle_bias_se_ratio, color = "Oracle")) +
+      geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
+      scale_color_manual(name='Method',
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      theme_bw() +
+      theme(axis.title=element_blank(),
+            legend.position='none')
+    
+    if(!is.na(max_bias_sd)){
+      p_bias_se <- p_bias_se + ylim(0,max_bias_sd)
+    }
+    
+    p_cr <- ggplot(df_a, aes(x = lambda_scaler)) +  
+      geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=0.95,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
+      geom_line(aes(y = cover_rate, color = "Delta")) + 
+      geom_point(aes(y = cover_rate, color = "Delta")) + 
+      geom_line(aes(y = oracle_cover_rate, color = "Oracle")) + 
+      geom_point(aes(y = oracle_cover_rate, color = "Oracle")) +
+      scale_color_manual(name='Method',
+                         breaks=c('Oracle', 'Delta'),
+                         values=c('Oracle'='#27B2AF', 'Delta'='#F4A7C1')) +
+      # scale_x_continuous(breaks=seq(0,1.2,by=0.25)) +
+      scale_y_continuous(limits = c(0, 1)) +
+      theme_bw()  + 
+      theme(axis.title=element_blank(),
+            legend.position='none')
+    
+    if(! is.na(u_g_scaler) ){
+      p_est_avg <- p_est_avg +      
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
+      
+      p_bias <- p_bias +      
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
+      
+      p_se <- p_se +      
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
+      
+      p_mse <- p_mse +      
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
+      
+      p_bias_se <- p_bias_se +      
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
+      
+      p_cr <- p_cr +      
+        geom_vline(xintercept = u_g_scaler, lty=2, col = "#f16c23") +
+        geom_vline(xintercept = 1, lty=2, col = "#2b6a99") 
+      
+    }
+    
+    p_est_avg_list[[i]] = p_est_avg
+    p_bias_list[[i]] = p_bias
+    p_se_list[[i]] = p_se
+    p_mse_list[[i]] = p_mse
+    p_bias_se_list[[i]] = p_bias_se
+    p_cr_list[[i]] = p_cr
+  }
+  
+  
+  g1 <- arrangeGrob(grobs = p_est_avg_list, nrow=1, left = grid::textGrob("Estimation, 95% CI", rot=90, gp=gpar(fontsize=12)))
+  g2 <- arrangeGrob(grobs = p_bias_list, nrow=1, left = grid::textGrob("|Bias|", rot=90, gp=gpar(fontsize=12)))
+  g3 <- arrangeGrob(grobs = p_se_list, nrow=1, left = grid::textGrob("Standard Error", rot=90, gp=gpar(fontsize=12)))
+  g4 <- arrangeGrob(grobs = p_mse_list, nrow=1, left = grid::textGrob("MSE", rot=90, gp=gpar(fontsize=12)))
+  g5 <- arrangeGrob(grobs = p_bias_se_list, nrow=1, left = grid::textGrob("Log Bias-SE Ratio", rot=90, gp=gpar(fontsize=12)))
+  g6 <- arrangeGrob(grobs = p_cr_list, nrow=1, left = grid::textGrob("Coverage rate", rot=90, gp=gpar(fontsize=12)) )#,
+  # bottom = grid::textGrob("lambda scalers", gp=gpar(fontsize=15)))
+  
+  
+  
+  p <- grid.arrange(g1, g6,  g5, g2, g3, g4,legend, legend_undersmoothing,
+                    layout_matrix = rbind(c(1,NA),
+                                          c(2,NA),
+                                          c(3,8),
+                                          c(4,7),
+                                          c(5,NA),
+                                          c(6,NA)),
+                    widths=c(8, 1), 
+                    top = textGrob("HAL-based plug-in estimator performances \n", 
+                                   gp=gpar(fontsize=18)))  
+  
+  if(!any(is.na(save_plot))){
+    for (i in 1:length(save_plot)) {
+      save_loc <- save_plot[i]
+      ggsave(save_loc, plot=p, width = 12, height = 9, dpi = 500)
+    }
+  }
+  
+  return(p)
+}
 
 
 plot_perforences_grid <- function(df, u_g_scaler=NA, save_plot=NA, max_bias_sd=NA){
@@ -799,9 +1092,9 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
   color_u_hal = "#85c876"
   color_gam = '#f7b722'
   color_poly = '#ef9db6'
-  color_npcausal =  "blueviolet"
+  color_npcausal =  "#99A9D1"
   
-  df <- df[df$method %in% c("U_1S_HAL", "GAM", "Poly", "npcausal"), ]
+  df <- df[df$method %in% c("HAL", "GAM", "Poly", "npcausal"), ]
   df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
                       log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
   
@@ -822,11 +1115,11 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_y_continuous(limits = c(ci_min, ci_max)) + 
       
       scale_color_manual(name='Method',
-                         breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                         breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_fill_manual(name='Method',
-                        breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
-                        values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                        breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                        values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -845,8 +1138,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
     labs(title="(d) Absolute Bias", x="Treatment", y="|Bias|") +
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Method',
-                       breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
-                       values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                       breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                       values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
     theme_bw()
   
   legend <- get_legend(p_bias)
@@ -874,8 +1167,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       # scale_y_continuous(limits = c(se_min, se_max)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                         breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
@@ -903,8 +1196,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       # scale_y_continuous(limits = c(se_min, se_max)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                         breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
@@ -937,8 +1230,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       labs(x='Treatment') +
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_color_manual(name='Method',
-                         breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                         breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -968,8 +1261,8 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_y_continuous(limits = c(0, 1)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_1S_HAL', 'GAM', 'Poly', 'npcausal'),
-                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+                         breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -1005,42 +1298,143 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
       save_loc <- save_plot[i]
       ggsave(save_loc, plot=p, width = 8, height = 15, dpi = 800)
       
-      p_1 = p_est_avg[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_est_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
-      
-      p_2 = p_est_avg[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_est_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
-      
-      p_bias = p_bias + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_bias.png"), plot=p_bias, width = 4, height = 3, dpi = 800)
-      
-      p_1 = p_se[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_se_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
-      
-      p_2 = p_se[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_se_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
-      
-      p_1 = p_mse[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_mse_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
-      
-      p_2 = p_mse[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_mse_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
-      
-      p_1 = p_bias_sd[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_bias_sd_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
-      
-      p_2 = p_bias_sd[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_bias_sd_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
-      
-      p_1 = p_cr[[1]] + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_cr_delta.png"), plot=p_1, width = 4, height = 3, dpi = 800)
-      
-      p_2 = p_cr[[2]] + theme(axis.title.y=element_blank(), title = element_blank())
-      ggsave( paste0(gsub(".png", "", save_loc), "_cr_oracle.png"), plot=p_2, width = 4, height = 3, dpi = 800)
-      
     }
   }
   
+  
+  return(p)
+  
+}
+
+plot_compare_methods_performances_small <- function(df, save_plot=NA){
+  
+  color_u_hal = "#85c876"
+  color_gam = '#f7b722'
+  color_poly = '#ef9db6'
+  color_npcausal =  "#99A9D1"
+  
+  df <- df[df$method %in% c("HAL", "GAM", "Poly", "npcausal"), ]
+  df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
+                      log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
+  
+  a_max <- max(df$a)
+  
+  #-------------------------------------------------
+  ci_min = min(df$ci_lwr, df$oracle_ci_lwr)
+  ci_max = max(df$ci_upr, df$oracle_ci_upr)
+  
+  p_est_avg <- ggplot(data=df, aes(x=a)) +
+      geom_line(aes(y=psi0), alpha = 0.5, color="black") +
+      geom_point(aes(y=psi0), color = "black") + 
+      geom_point(aes(y=y_hat, color=method), shape=17, size=2, alpha= 0.7) +
+      geom_ribbon(aes(ymin=oracle_ci_lwr, ymax=oracle_ci_upr, color=method, fill=method),  alpha=0.3) +
+      labs(x="a") +
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      scale_y_continuous(limits = c(ci_min, ci_max)) + 
+      scale_color_manual(name='Method',
+                         breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+      scale_fill_manual(name='Method',
+                        breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                        values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+      theme_bw() +
+      theme(legend.box = "horizontal", legend.position='none') +
+      geom_ribbon(aes(ymin=oracle_ci_lwr, ymax=oracle_ci_upr, color=method, fill=method, linetype = "Oracle"),  width=0.7, alpha=0.1) +
+    labs(title = "(a) Estimations & CI" , y="Outcome", x = "Treatment")
+  
+  #-------------------------------------------------
+  p_bias <- ggplot(df, aes(x = a, y = bias)) +  
+    geom_line(aes(color=method)) +
+    geom_point(aes(color=method)) + 
+    labs(title="(d) Absolute Bias", x="Treatment", y="|Bias|") +
+    scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+    scale_color_manual(name='Method',
+                       breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                       values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+    theme_bw() + 
+    theme(legend.position='bottom') + 
+    guides(color=guide_legend(nrow=1, byrow=TRUE) )
+  
+  legend <- get_legend(p_bias)
+  p_bias <- p_bias + theme(legend.position='none')
+  
+  
+  #-------------------------------------------------
+  se_min = min(df$oracle_SE)
+  se_max = max(df$oracle_SE)
+
+  p_se <- ggplot(df, aes(x = a)) +  
+    geom_line(aes(y = oracle_SE, color=method),alpha=0.7) +
+    geom_point(aes(y = oracle_SE, color=method),alpha=0.7) + 
+    labs(title = "(e) SE", y = "SE") +
+      labs(x="Treatment") +
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      # scale_y_continuous(limits = c(se_min, se_max)) +
+      scale_color_manual(name='Method',
+                         breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+      theme_bw() + 
+      theme(legend.box = "horizontal", legend.position='none')
+
+  
+  #-------------------------------------------------
+  mse_min = min(df$MSE, df$MSE)
+  mse_max = max(df$MSE, df$MSE)
+
+  p_mse <- ggplot(df, aes(x = a)) +  
+    geom_line(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) +
+    geom_point(aes(y = MSE, color=method, linetype='Delta'),alpha=0.7) + 
+    labs(title = "(f) MSE", y = "MSE") +
+      labs(x="Treatment") +
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      # scale_y_continuous(limits = c(se_min, se_max)) +
+      scale_color_manual(name='Method',
+                         breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+      theme_bw() + 
+      theme(legend.box = "horizontal", legend.position='none')
+  
+  
+  #-------------------------------------------------
+  bias_se_min = min(df$oracle_bias_se_ratio)
+  bias_se_max = max( df$oracle_bias_se_ratio)
+  
+  df_bias_se <- df[! df$a %in% c(0,5), ]
+
+  p_bias_sd <- ggplot(df_bias_se, aes(x = a)) +  
+    xlim(0,5) +
+    geom_line(aes(y = log_oracle_bias_se_ratio, color=method), alpha=0.7) +
+    geom_point(aes(y = log_oracle_bias_se_ratio, color=method), alpha=0.7) + 
+    geom_hline(aes(yintercept=log(1/log(nn))), linetype = "dashed") +
+    labs(y="log(|Bias|/SE)", title = "(c) Log Bias-SE Ratio") +  
+      labs(x='Treatment') +
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      scale_color_manual(name='Method',
+                         breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+      theme_bw() +
+      theme(legend.position='none') 
+  
+  
+  #-------------------------------------------------
+
+
+  ymin_cr_o = max(0.95, min(df$oracle_cover_rate))
+  p_cr <- ggplot(df, aes(x = a)) +  
+    geom_rect(data=NULL,aes(xmin=-Inf,xmax=Inf,ymin=ymin_cr_o,ymax=Inf), fill="khaki1", alpha = 0.1)+ # fill="darkseagreen1"
+    geom_line(aes(y = oracle_cover_rate, color=method), alpha=0.7) +
+    geom_point(aes(y = oracle_cover_rate, color=method), alpha=0.7) + 
+    labs(y = "Coverage Rate", title = "(b) CI Coverage Rate") +
+      labs(x='Treatment')+
+      scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
+      scale_y_continuous(limits = c(0, 1)) +
+      scale_color_manual(name='Method',
+                         breaks=c('HAL', 'GAM', 'Poly', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal, 'GAM'=color_gam, 'Poly'=color_poly)) +
+      theme_bw() +
+      theme(legend.position='none') 
+  
+  p <- list(p_est_avg, p_cr, p_bias_sd, p_bias, p_se, p_mse, legend)
   
   return(p)
   
@@ -1050,9 +1444,9 @@ plot_compare_methods_performances <- function(df, save_plot=NA){
 plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
   
   color_u_hal = "#85c876"
-  color_npcausal =  "blueviolet"
+  color_npcausal =  "#99A9D1"
   
-  df <- df[df$method %in% c("U_1S_HAL", "npcausal"), ]
+  df <- df[df$method %in% c("HAL", "npcausal"), ]
   df <- df %>% mutate(log_bias_se_ratio = log(bias_se_ratio), 
                       log_oracle_bias_se_ratio = log(oracle_bias_se_ratio))
   
@@ -1072,11 +1466,11 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_y_continuous(limits = c(ci_min, ci_max)) + 
       scale_color_manual(name='Method',
-                         breaks=c('U_1S_HAL', 'npcausal'),
-                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
+                         breaks=c('HAL', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_fill_manual(name='Method',
-                        breaks=c('U_1S_HAL', 'npcausal'),
-                        values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
+                        breaks=c('HAL', 'npcausal'),
+                        values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -1095,8 +1489,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
     labs(title="(d) Absolute Bias", x="Treatment", y="|Bias|") +
     scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
     scale_color_manual(name='Method',
-                       breaks=c('U_1S_HAL', 'npcausal'),
-                       values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
+                       breaks=c('HAL', 'npcausal'),
+                       values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
     theme_bw()
   
   legend <- get_legend(p_bias)
@@ -1124,8 +1518,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       # scale_y_continuous(limits = c(se_min, se_max)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_1S_HAL', 'npcausal'),
-                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
+                         breaks=c('HAL', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
@@ -1153,8 +1547,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       # scale_y_continuous(limits = c(se_min, se_max)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_1S_HAL', 'npcausal'),
-                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
+                         breaks=c('HAL', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() + 
@@ -1188,8 +1582,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
       labs(x='Treatment') +
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_color_manual(name='Method',
-                         breaks=c('U_1S_HAL', 'npcausal'),
-                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
+                         breaks=c('HAL', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +
@@ -1219,8 +1613,8 @@ plot_compare_methods_performances_npcausal <- function(df, save_plot=NA){
       scale_x_continuous(limits = c(0, a_max), breaks = 0:a_max) +
       scale_y_continuous(limits = c(0, 1)) +
       scale_color_manual(name='Method',
-                         breaks=c('U_1S_HAL', 'npcausal'),
-                         values=c('U_1S_HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
+                         breaks=c('HAL', 'npcausal'),
+                         values=c('HAL'=color_u_hal, 'npcausal'=color_npcausal)) +
       scale_linetype_manual(breaks=c('Oracle', 'Delta'),
                             values=c('Oracle'=1, 'Delta'=5)) +
       theme_bw() +

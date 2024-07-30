@@ -129,6 +129,11 @@ p <- estimation_qqplot_cv_ug_alla(results_list = results_1, save_plot = save_plo
 plot(p)
 ```
 
+```{r}
+rslt_sum %>% 
+  group_by(method) %>%
+  summarise(across(everything(), mean, na.rm = TRUE))
+```
 
 <!-- ### CV vs Undersmoothing (First smoothness order with even smaller number of knots) -->
 
@@ -329,7 +334,7 @@ ggsave(here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_grid_num_b
 ```{r fig.width=25, fig.height=9}
 # lambda_scalers = c(1.2, 1.1, 10^seq(from=0, to=-3, length=20))
 
-if (nn != 5000 & simu.num != 4){
+
   
 load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_grid_extra.RData")))
 source(here("run_simu", "simu_visual_functions.R"))
@@ -351,13 +356,13 @@ p <- plot_perforences_grid(results_grid_all,
                            u_g_scaler=u_g_scaler, 
                                 save_plot=save_plots, 
                                 max_bias_sd=NA)
-}
+
 
 ```
 
 
 ```{r fig.width=25, fig.height=11}
-if (nn != 5000 & simu.num != 4){
+
   save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "grid_scalers", paste0("simu_sys", simu.num, "_n", n, "_grid_performences_extra_lambda.png")), 
                  here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_grid_performences_extra_lambda.png")))
 
@@ -367,12 +372,11 @@ p <- plot_perforences_grid_lambda(results_grid_all,
                                                   cv_lambda = cv_lambda,
                                                   save_plot=save_plots,
                                                   max_bias_sd=NA )
-}
+
 
 ```
 
 ```{r fig.height=5, fig.width=10}
-if (nn != 5000 & simu.num != 4){
   save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "grid_scalers", paste0("simu_sys", simu.num, "_n", n, "_grid_performences_extra_a1.png")), 
                  here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_grid_performences_extra_a1.png")))
 
@@ -391,7 +395,6 @@ p <- plot_perforences_grid_lambda_a(results_grid_all,
                                                   cv_lambda = cv_lambda,
                                                   save_plot=save_plots,
                                                   max_bias_sd=NA )
-}
 
 ```
 
@@ -412,12 +415,22 @@ results_gam_summary = results_gam$result_summary
 results_gam_summary$method = "GAM"
 results_gam_summary <- rename_df(results_gam_summary)
 
+check_se_over_1000 <- function(df) {
+  if("SE" %in% names(df)) {
+    any(df$SE > 1000)
+  } else {
+    FALSE  # Return FALSE if there is no "SE" column
+  }
+ }
+ 
+error_ones <- sapply(results_npcausal$all_results, check_se_over_1000)
+results_npcausal$all_results <- results_npcausal$all_results[!error_ones]
+results_npcausal <- run_simu_rep_npcausal_summary(results_npcausal, "npcausal")
 results_npcausal_summary = results_npcausal$result_summary
-results_npcausal_summary$method = "npcausal"
 results_npcausal_summary <- rename_df(results_npcausal_summary)
 
 results_df1 = rslt_sum_1[rslt_sum_1$method == "U_G",]
-results_df1$method = "U_1S_HAL"
+results_df1$method = "HAL"
 
 results_gam_summary$MSE = results_gam_summary$bias^2 + results_gam_summary$oracle_SE^2
 results_poly_summary$MSE = results_poly_summary$bias^2 + results_poly_summary$oracle_SE^2

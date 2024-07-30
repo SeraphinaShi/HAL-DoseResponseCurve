@@ -55,6 +55,16 @@ print(R.files.sources)
 sapply(R.files.sources, source)
 ```
 
+```{r}
+mean(c(0, 0, 0, 
+       0.006, 0.012, 0.018,
+       0.020, 0.02, 0.008,
+       0.026, 0.030, 0.032))
+
+
+```
+
+
 # Simulation 1
 Data structure:  $O = (W, A, Y)$
 
@@ -174,117 +184,574 @@ simu.num = 4
 ```{r child = 'Simu_results_template_one_simu.Rmd'}
 ```
 
-# Simulation 5
+
+
+
+# plots and tables 
 ```{r}
-write_matex2 <- function(x) {
-  begin <- "\\begin{bmatrix}"
-  end <- "\\end{bmatrix}"
-  X <-
-    apply(x, 1, function(x) {
-      paste(
-        paste(x, collapse = "&"),
-        "\\\\"
-      )
-    })
-  paste(c(begin, X, end), collapse = "")
+nn = 1000
+
+simu_tbl <- data.frame()
+
+for (a_Val in c(2,4)){
+  
+  simu.num = 1
+
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first.RData")))
+  rslt_sum = results_1$result_summary
+  rslt_sum = add_bound(rslt_sum) 
+
+  tbl1 = rslt_sum %>% 
+  filter(a == a_Val) %>% 
+  mutate(simu = 1)
+  
+  simu.num = 2
+  
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first.RData")))
+  rslt_sum = results_1$result_summary
+  rslt_sum = add_bound(rslt_sum)
+  
+  tbl2 = rslt_sum %>% 
+    filter(a == a_Val) %>% 
+  mutate(simu = 2)
+  
+  simu.num = 3
+  
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first.RData")))
+  rslt_sum = results_1$result_summary
+  rslt_sum = add_bound(rslt_sum)
+  
+  tbl3 = rslt_sum %>% 
+    filter(a == a_Val) %>% 
+  mutate(simu = 3)
+  
+  simu.num = 4
+  
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first.RData")))
+  rslt_sum = results_1$result_summary
+  rslt_sum = add_bound(rslt_sum)
+  
+  tbl4 = rslt_sum %>% 
+    filter(a == a_Val) %>% 
+  mutate(simu = 4)
+  
+  tbl <- rbind(tbl1, tbl2) %>% rbind(tbl3) %>% rbind(tbl4) %>% as.data.frame()
+  
+  numeric_cols <- tbl %>% select(simu, bias, MSE, cover_rate, bias_se_ratio, SE, oracle_cover_rate, oracle_bias_se_ratio, oracle_SE) %>% round(3)
+
+  # Select non-numeric columns
+  non_numeric_cols <- tbl %>% select(method, a) 
+  
+  # Combine the numeric and non-numeric columns
+  sum1_a <- bind_cols(non_numeric_cols, numeric_cols) %>% select(simu, a, method, everything())
+
+  simu_tbl <- rbind(simu_tbl, sum1_a)
+
 }
 
-U_W_var <- matrix(c(1,        0.8,      0.9*1.5,     0.2*0.5,      0.1*0.3,
-                      0.8,      1,        0.8*1.5,     0.3*0.5,      0.1*0.3, 
-                      0.9*1.5,  0.8*1.5,  1.5^2,       0.1*0.5*1.5,  0.5*0.3*1.5,
-                      0.2*0.5,  0.3*0.5,  0.1*0.5*1.5, 0.5^2,        0.75*0.3*0.5,
-                      0.1*0.3,  0.1*0.3,  0.5*0.3*1.5, 0.75*0.3*0.5, 0.3^2), nrow = 5)
-
-U_W_mu <- matrix(c(0, 0, 5, 1, 1), nrow=5)
+simu_tbl %>% arrange(simu, a)
 ```
 
-Data structure:  $O = (W_1, W_2, W_3, W_4, W_5, A, Y)$
+```{r fig.width=10, fig.height=10}
+simu.num = 3
+nn = 1000
 
- * W - baseline covariates
- * A - treatment level based on W, continuous between 0 and 5
- * Y - outcome, indicator of an event 
+load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_grid.RData")))
 
- Underlying data generating process, $P_{U,X}$
+load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first.RData")))
+source(here("run_simu", "simu_visual_functions.R"))
 
-* Exogenous variables:
-  + $U_A \sim Normal(\mu=0, \sigma^2 = 1^2)$
-  + $U_A \sim Normal(\mu=0, \sigma^2 = 2^2)$
+rslt_sum = results_1$result_summary
+u_g_scaler = mean(unique(rslt_sum$lambda_scaler[rslt_sum$method == 'U_G']))
 
-* Structural equations F and endogenous variables:
-  + $W \sim  N(\mu_W, \Sigma_W)$
-  + $A = bound(0.1W_1 + 0.2W_2 + 0.5W_3 + 0.15W_4 - 0.05W_5 - 0.01W_3W_5 + U_A, min=0, max=5)$
-  + $Y = \mathbf{I}[U_Y < expit(-7 -W_1 + 2W_2 - 0.5W_4 - W_1W_3 + 4A + 0.5AW_2)]$
-    - where $\mu_W = `r write_matex2(U_W_mu)`$, and $\Sigma_W = `r write_matex2(U_W_var)`$
+results_grid_s <- results_grid$result_summary
+results_grid_s = add_bound(results_grid_s)
 
-Outcome of interest: $E_0[Y|a,W]$, $a \in [0,5]$, the causal dose-response curve
 
-```{r check_sys5}
-simu.num = 5
+save_plots <- c(here(getwd(), "plots", paste0("sys", simu.num), "grid_scalers", paste0("simu_sys", simu.num, "_n", n, "_grid_performences_small.png")), 
+                 here(getwd(), "plots", paste0("simu_sys", simu.num, "_n", n, "_grid_performences_small.png")))
+
+p <- plot_perforences_grid_small(results_grid_s,
+                           u_g_scaler=u_g_scaler, 
+                                save_plot= save_plots, 
+                                max_bias_sd=NA)
+
+
 ```
 
-# ```{r child = 'Simu_results_template_one_simu.Rmd'}
-# ```
+```{r, fig.width=15, fig.height=8}
+nn = 200
 
-# Simulation 5
+simu.num = 1
+load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
+source(here("run_simu", "simu_visual_functions.R"))
+results_adapt$result_summary = add_bound(results_adapt$result_summary)
+results_adapt_1 <- results_adapt$result_summary
+simu1_plots_200 <- plot_performences_adapt_small(df = results_adapt_1)
 
-Data structure:  $O = (W_1, W_2, W_3, W_4, W_5, A, Y)$
+simu.num = 3
+load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
+source(here("run_simu", "simu_visual_functions.R"))
+results_adapt$result_summary = add_bound(results_adapt$result_summary)
+results_adapt_3 <- results_adapt$result_summary
+simu3_plots_200 <- plot_performences_adapt_small(df = results_adapt_3)
 
- * W - baseline covariates
- * A - treatment level based on W, continuous between 0 and 5
- * Y - outcome, indicator of an event 
+nn = 5000
 
- Underlying data generating process, $P_{U,X}$
+simu.num = 1
+load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
+source(here("run_simu", "simu_visual_functions.R"))
+results_adapt$result_summary = add_bound(results_adapt$result_summary)
+results_adapt_1 <- results_adapt$result_summary
+simu1_plots_5000 <- plot_performences_adapt_small(df = results_adapt_1)
 
-* Exogenous variables:
-  + $U_A \sim Normal(\mu=0, \sigma^2 = 1^2)$
-  + $U_A \sim Normal(\mu=0, \sigma^2 = 2^2)$
+simu.num = 3
+load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
+source(here("run_simu", "simu_visual_functions.R"))
+results_adapt$result_summary = add_bound(results_adapt$result_summary)
+results_adapt_3 <- results_adapt$result_summary
+simu3_plots_5000 <- plot_performences_adapt_small(df = results_adapt_3)
 
-* Structural equations F and endogenous variables:
-  + $W \sim  N(\mu_W, \Sigma_W)$
-  + $A = bound(0.1W_1 + 0.2W_2 + 0.5W_3 + 0.15W_4 - 0.05W_5 - 0.01W_3W_5 + U_A, min=0, max=5)$
-  + $Y = \mathbf{I}[U_Y < expit(-10 -W_1 + 2W_2 - 0.5W_4 - 0.5W_1W_3 + 4A + \mathbf{I}(A>2) *5sin((0.8A)^2 - 2.6))]$
-    - where $\mu_W = `r write_matex2(U_W_mu)`$, and $\Sigma_W = `r write_matex2(U_W_var)`$
+for(i in 1:6){
+  simu3_plots_200[[i]] <- simu3_plots_200[[i]] + labs(title = " ")
+  simu1_plots_5000[[i]] <- simu1_plots_5000[[i]] + labs(title = " ")
+  simu3_plots_5000[[i]] <- simu3_plots_5000[[i]] + labs(title = " ")
+}
 
-Outcome of interest: $E_0[Y|a,W]$, $a \in [0,5]$, the causal dose-response curve
+simu_plots = c(simu1_plots_200[1:6], simu1_plots_5000[1:6], simu3_plots_200[1:6], simu3_plots_5000)
 
-```{r check_sys6}
-simu.num = 6
+g <- grid.arrange(grobs = simu_plots, 
+             layout_matrix = rbind(c(1:6),
+                                   c(7:12),
+                                   c(13:18),
+                                   c(19:24),
+                                   c(NA,NA,25,25,NA, NA)),
+             heights = c(5,5,5,5,1),
+             left="            Simulation 3                                                             Simulation 1 \
+          n = 5000                            n = 200                             n = 5000                           n = 200 "
+             )
+
+save_plot=here(getwd(), "plots", paste0("simu_sys1_sys3_n_200_5000_adapt_performences.png"))
+ggsave(save_plot, plot=g, width = 15, height = 8, dpi = 300)
+
 ```
 
-# ```{r child = 'Simu_results_template_one_simu.Rmd'}
-# ```
 
-# Simulation 7
+```{r, fig.width=11, fig.height=4}
+nn = 200
 
-Data structure:  $O = (W_1, W_2, W_3, A, Y)$
+simu.num = 3
+load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
+source(here("run_simu", "simu_visual_functions.R"))
+results_adapt$result_summary = add_bound(results_adapt$result_summary)
+results_adapt_3 <- results_adapt$result_summary
+simu3_plots_200 <- plot_performences_adapt_small(df = results_adapt_3)
 
- * W - baseline covariates
- * A - treatment level based on W, continuous between 0 and 1
- * Y - outcome, indicator of an event 
+nn = 5000
 
- Underlying data generating process, $P_{U,X}$
+simu.num = 3
+load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
+source(here("run_simu", "simu_visual_functions.R"))
+results_adapt$result_summary = add_bound(results_adapt$result_summary)
+results_adapt_3 <- results_adapt$result_summary
+simu3_plots_5000 <- plot_performences_adapt_small(df = results_adapt_3)
 
-* Structural equations F and endogenous variables:
-  + $W_1 \sim Uniform(o,1)$
-  + $W_2 \sim Bernoulli(\mu=0, \sigma^2 = 2^2)$
-  + $W_3 \sim  N(W_1, 0.25*exp(2W_1))$
-  + $A \sim Beta(v(W)\mu(W), v(W)[1-\mu(W)])$
-  + $Y \sim Bernoulli(Q_0(A,W))$
-    - where:
-    - $v(W) = exp(1 + 2W_1expit(W3))$
-    - $\mu(W) = expit(0.03 - 0.8log(1+W_2) + 0.9exp(W_1)W_2 - 0.4arctan(W_3+2)W_2W_1)$
-    - $\bar{Q}_0(A,W) = expit(-2 + 1.5A + 5A^3 - 2.5W_1 + 0.5AW_2 - log(A)W_1W_2 + 0.5A^{3/4}W_1W_3)$
+for(i in 1:6){
+  simu3_plots_5000[[i]] <- simu3_plots_5000[[i]] + labs(title = " ")
+}
 
-Outcome of interest: $E_0[Y|a,W]$, $a \in (0,1])$, the causal dose-response curve
+simu_plots = c(simu3_plots_200[c(1:3,6)], simu3_plots_5000[c(1:3,6,7)])
 
-```{r check_sys7}
-simu.num = 7
+g <- grid.arrange(grobs = simu_plots, 
+             layout_matrix = rbind(c(1:4),
+                                   c(5:8),
+                                   c(NA,9,9,NA)),
+             heights = c(5,5,1),
+             left="                        Simulation 3                 \
+                                      n = 5000                            n = 200                             "
+             )
+
+save_plot=here(getwd(), "plots", paste0("simu_sys3_n_200_5000_adapt_performences_poster.png"))
+ggsave(save_plot, plot=g, width = 11, height = 4, dpi = 300)
+
 ```
 
-# ```{r child = 'Simu_results_template_one_simu.Rmd'}
-# ```
+```{r, fig.width=15, fig.height=8}
+nn = 5000
+p_list <- list()
+results_sum <- data.frame()
+
+check_se_over_1000 <- function(df) {
+  if("SE" %in% names(df)) {
+    any(df$SE > 1000)
+  } else {
+    FALSE  # Return FALSE if there is no "SE" column
+  }
+}
+
+for (simu.num in 1:4) {
+    
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_poly.RData")))
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_GAM.RData")))
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_npcausal.RData")))
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first.RData")))
+  source(here("run_simu", "simu_visual_functions.R"))
+  
+  rslt_sum = results_1$result_summary
+  rslt_sum = add_bound(rslt_sum)
+  
+  results_poly_summary = results_poly$result_summary
+  results_poly_summary$method = "Poly"
+  results_poly_summary <- rename_df(results_poly_summary)
+  
+  results_gam_summary = results_gam$result_summary
+  results_gam_summary$method = "GAM"
+  results_gam_summary <- rename_df(results_gam_summary)
+  
+  error_ones <- sapply(results_npcausal$all_results, check_se_over_1000)
+  results_npcausal$all_results <- results_npcausal$all_results[!error_ones]
+  results_npcausal <- run_simu_rep_npcausal_summary(results_npcausal, "npcausal")
+  results_npcausal_summary = results_npcausal$result_summary
+  results_npcausal_summary <- rename_df(results_npcausal_summary)
+
+  results_df1 = rslt_sum[rslt_sum$method == "U_G",]
+  results_df1$method = "HAL"
+  
+  results_gam_summary$MSE = results_gam_summary$bias^2 + results_gam_summary$oracle_SE^2
+  results_poly_summary$MSE = results_poly_summary$bias^2 + results_poly_summary$oracle_SE^2
+  results_npcausal_summary$MSE = results_npcausal_summary$bias^2 + results_npcausal_summary$oracle_SE^2
+  
+  colnames_overlap =intersect(names(results_df1), names(results_npcausal_summary))
+  
+  results_all <- rbind(results_gam_summary[, colnames_overlap], 
+                       results_poly_summary[, colnames_overlap], 
+                       results_npcausal_summary[, colnames_overlap], 
+                       results_df1[, colnames_overlap])
+  
+  
+  results_all = add_bound(results_all)
+  
+  p_list[[simu.num]] <- plot_compare_methods_performances_small(results_all)
+  
+  results_sum_1simu <- results_all %>% 
+    mutate(simu = simu.num) %>%
+    select(simu, method, bias, MSE, 
+           oracle_cover_rate, oracle_bias_se_ratio, oracle_SE, 
+           cover_rate, bias_se_ratio, SE) %>%
+    group_by(simu, method) %>%
+    summarise(across(.cols = where(is.numeric), .fns = mean)) 
+    
+  
+  results_sum <- rbind(results_sum, results_sum_1simu)
+  
+}
+
+for(i in 1:6){
+  p_list[[2]][[i]] <- p_list[[2]][[i]] + labs(title = " ")
+  p_list[[3]][[i]] <- p_list[[3]][[i]] + labs(title = " ")
+  p_list[[4]][[i]] <- p_list[[4]][[i]] + labs(title = " ")
+
+}
+
+all_plots = c(p_list[[1]][1:6], p_list[[2]][1:6], p_list[[3]][1:6], p_list[[4]])
 
 
+g <- grid.arrange(grobs = all_plots, 
+                   layout_matrix = rbind(c(1:6),
+                                   c(7:12),
+                                   c(13:18),
+                                   c(19:24),
+                                   c(NA,NA,25,25,NA, NA)),
+             heights = c(5,5,5,5,1), 
+             left="             Simulation 4                     Simulation 3                      Simulation 2                    Simulation 1  "
+             )
+
+save_plot=here(getwd(), "plots", paste0("simu_sys1234_n", nn,"_compare_performences.png"))
+ggsave(save_plot, plot=g, width = 15, height = 8, dpi = 300)
+
+
+results_sum <- results_sum %>%
+  mutate(across(.cols = where(is.numeric), .fns = ~ round(., digits = 3)))
+
+results_sum$method = factor(results_sum$method, levels = c("HAL", "npcausal", "GAM", "Poly"))
+
+results_sum %>% arrange(simu, method)
+
+
+
+```
+
+
+
+```{r, fig.width=11, fig.height=8}
+nn = 5000
+p_list <- list()
+results_sum <- data.frame()
+
+check_se_over_1000 <- function(df) {
+  if("SE" %in% names(df)) {
+    any(df$SE > 1000)
+  } else {
+    FALSE  # Return FALSE if there is no "SE" column
+  }
+}
+
+for (simu.num in 1:4) {
+    
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_poly.RData")))
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_GAM.RData")))
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_npcausal.RData")))
+  load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_first.RData")))
+  source(here("run_simu", "simu_visual_functions.R"))
+  
+  rslt_sum = results_1$result_summary
+  rslt_sum = add_bound(rslt_sum)
+  
+  results_poly_summary = results_poly$result_summary
+  results_poly_summary$method = "Poly"
+  results_poly_summary <- rename_df(results_poly_summary)
+  
+  results_gam_summary = results_gam$result_summary
+  results_gam_summary$method = "GAM"
+  results_gam_summary <- rename_df(results_gam_summary)
+  
+  error_ones <- sapply(results_npcausal$all_results, check_se_over_1000)
+  results_npcausal$all_results <- results_npcausal$all_results[!error_ones]
+  results_npcausal <- run_simu_rep_npcausal_summary(results_npcausal, "npcausal")
+  results_npcausal_summary = results_npcausal$result_summary
+  results_npcausal_summary <- rename_df(results_npcausal_summary)
+
+  results_df1 = rslt_sum[rslt_sum$method == "U_G",]
+  results_df1$method = "HAL"
+  
+  results_gam_summary$MSE = results_gam_summary$bias^2 + results_gam_summary$oracle_SE^2
+  results_poly_summary$MSE = results_poly_summary$bias^2 + results_poly_summary$oracle_SE^2
+  results_npcausal_summary$MSE = results_npcausal_summary$bias^2 + results_npcausal_summary$oracle_SE^2
+  
+  colnames_overlap =intersect(names(results_df1), names(results_npcausal_summary))
+  
+  results_all <- rbind(results_gam_summary[, colnames_overlap], 
+                       results_poly_summary[, colnames_overlap], 
+                       results_npcausal_summary[, colnames_overlap], 
+                       results_df1[, colnames_overlap])
+  
+  
+  results_all = add_bound(results_all)
+  
+  p_list[[simu.num]] <- plot_compare_methods_performances_small(results_all)
+  
+  results_sum_1simu <- results_all %>% 
+    mutate(simu = simu.num) %>%
+    select(simu, method, bias, MSE, 
+           oracle_cover_rate, oracle_bias_se_ratio, oracle_SE, 
+           cover_rate, bias_se_ratio, SE) %>%
+    group_by(simu, method) %>%
+    summarise(across(.cols = where(is.numeric), .fns = mean)) 
+    
+  
+  results_sum <- rbind(results_sum, results_sum_1simu)
+  
+}
+
+for(i in 1:4){
+  p_list[[i]][[1]] <- p_list[[i]][[1]] + 
+    labs(title = paste0("Simulation ", i)) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  for (j in 2:6) {
+    p_list[[i]][[j]] <- p_list[[i]][[j]] + 
+      labs(title = " ")
+  }
+
+}
+
+
+all_plots = c(p_list[[1]][c(1:3,6)], p_list[[2]][c(1:3,6)], p_list[[3]][c(1:3,6)], p_list[[4]][c(1:3,6,7)])
+
+
+
+g <- grid.arrange(grobs = all_plots, 
+                   layout_matrix = rbind(
+                                   c(1,5,9,13),
+                                   c(2,6,10,14),
+                                   c(3,7,11,15),
+                                   c(4,8,12,16),
+                                   c(NA,17,17,NA)),
+             heights = c(5,5,5,5,1)
+             )
+
+save_plot=here(getwd(), "plots", paste0("simu_sys1234_n", nn,"_compare_performences_poster.png"))
+ggsave(save_plot, plot=g, width = 11, height = 8, dpi = 300)
+
+
+results_sum <- results_sum %>%
+  mutate(across(.cols = where(is.numeric), .fns = ~ round(., digits = 3)))
+
+results_sum$method = factor(results_sum$method, levels = c("HAL", "npcausal", "GAM", "Poly"))
+
+results_sum %>% arrange(simu, method)
+
+
+
+```
+
+
+
+```{r, fig.width=17, fig.height=5}
+simu.num = 1
+nn = 200
+load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
+source(here("run_simu", "simu_visual_functions.R"))
+results_adapt$result_summary = add_bound(results_adapt$result_summary)
+results_adapt_1 <- results_adapt$result_summary
+simu1_plots <- plot_performences_adapt_small(df = results_adapt_1)
+
+nn = 1000
+load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
+source(here("run_simu", "simu_visual_functions.R"))
+results_adapt$result_summary = add_bound(results_adapt$result_summary)
+results_adapt_3 <- results_adapt$result_summary
+simu3_plots <- plot_performences_adapt_small(df = results_adapt_3)
+
+for(i in 1:6){
+  simu3_plots[[i]] <- simu3_plots[[i]] + labs(title = " ")
+}
+
+simu_plots = c(simu1_plots[1:6], simu3_plots)
+g <- grid.arrange(grobs = simu_plots, 
+             layout_matrix = rbind(c(1,2,3,4,5,6),
+                                   c(7,8,9,10,11,12),
+                                   c(NA,13,13,13, NA)),
+             heights = c(5,5,1),
+             left="                Simulation 3                          Simulation 1 \
+               "
+             )
+
+save_plot=here(getwd(), "plots", paste0("simu_sys1_n_200_1000_adapt_performences.png"))
+ggsave(save_plot, plot=g, width = 17, height = 5, dpi = 500)
+
+```
+
+
+```{r, fig.width=15, fig.height=3}
+check_n_basis <- function(df) {
+        !all(sapply(df$n_basis, is.numeric) & sapply(df$n_basis, length) == 1)
+}
+
+cv_risk_summary_df <- data.frame()
+select_1_df <- data.frame()
+
+for (simu.num in c(1,2, 3, 4)) {
+  for (nn in c(200, 500, 1000, 5000)) {
+    load(here("data", "rdata", paste0("simu_", simu.num, "_", nn, "_adapt.RData")))
+    
+    result_list <- results_adapt$result_list
+    
+    result_summaries <- list()
+    methods = names(result_list[[1]])
+    
+    for (method in c("halcv0_sKnots", "halcv1_sKnots", "halcv2_sKnots", "halcv3_sKnots")){
+      result_list_method <- lapply(result_list, function(lst) lst[[method]])
+      result_all <-  do.call("rbind", result_list_method) %>% as.data.frame()
+      result_all <- merge(as.data.frame(psi0_pnt), result_all, by=c("a"))
+      
+      data_frames_with_varying_n_basis <- result_list_method[sapply(result_list_method, check_n_basis)]
+      
+      so <- ifelse(grepl("[0-9]", method), as.numeric(gsub("[^0-9]", "", method)) , -1)
+        
+      result_summary_cv_risk <- result_all %>% 
+        select(cv_risk, if_n_knots_default, smooth_order) %>%
+        unique() %>%
+        mutate(avg = mean(cv_risk),
+               se = sqrt(var(cv_risk))) %>% 
+        select(avg, se, if_n_knots_default) %>%
+        unique() %>% 
+        mutate(ci_lwr = avg - 1.96 * se,
+               ci_upr = avg + 1.96 * se,
+               so = so,
+               simu = simu.num,
+               n = nn)
+      
+      result_summaries[[method]] = result_summary_cv_risk
+    }
+    
+    result_summary = do.call("rbind", result_summaries) %>% 
+      as.data.frame() %>%
+      select(-if_n_knots_default)
+        
+    method<- "U_HAL_SL_pick"
+  
+    cv_risk_summary_df <- rbind(cv_risk_summary_df, result_summary) %>% unique()
+      
+    
+    
+    result_list_method <- lapply(result_list, function(lst) lst[[method]])
+    result_all_sl <-  do.call("rbind", result_list_method) %>% 
+      as.data.frame() %>% 
+      filter(a == 0) %>%
+      unique() 
+    
+    select_1 <- mean(result_all_sl$smooth_order == 1)
+    
+    select_1_df <- rbind(select_1_df, c(simu.num, nn, select_1))
+  }
+}
+
+cv_risk_summary_df <- cv_risk_summary_df %>% mutate(n = as.factor(n))
+
+p_cv_risk_1 <- ggplot(cv_risk_summary_df %>% filter(simu == 1), 
+                    aes(x = so, y = avg, col = n)) +  
+      geom_line() + 
+      geom_point() + 
+      geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, fill=n),  linetype = 0, alpha=0.1) +
+      theme_bw()  + 
+      labs(x = "smoothness order", y = "CV risk", title = "Simulation 1") 
+
+legend <- get_legend(p_cv_risk_1)
+p_cv_risk_1 <- p_cv_risk_1 + theme(legend.position='none')
+
+p_cv_risk_2 <- ggplot(cv_risk_summary_df %>% filter(simu == 2), 
+                    aes(x = so, y = avg, col = n)) +  
+      geom_line() + 
+      geom_point() + 
+      geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, fill=n),  linetype = 0, alpha=0.1) +
+      theme_bw()  + 
+      labs(x = "smoothness order", y = "CV risk", title = "Simulation 2")  + 
+  theme(legend.position='none')
+
+p_cv_risk_3 <- ggplot(cv_risk_summary_df %>% filter(simu == 3), 
+                    aes(x = so, y = avg, col = n)) +  
+      geom_line() + 
+      geom_point() + 
+      geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, fill=n),  linetype = 0, alpha=0.1) +
+      theme_bw()  + 
+      labs(x = "smoothness order", y = "CV risk", title = "Simulation 3")  + 
+  theme(legend.position='none')
+
+p_cv_risk_4 <- ggplot(cv_risk_summary_df %>% filter(simu == 4), 
+                    aes(x = so, y = avg, col = n)) +  
+      geom_line() + 
+      geom_point() + 
+      geom_ribbon(aes(ymin=ci_lwr, ymax=ci_upr, fill=n),  linetype = 0, alpha=0.1) +
+      theme_bw()  + 
+      labs(x = "smoothness order", y = "CV risk", title = "Simulation 4")  + 
+  theme(legend.position='none')
+
+p <- grid.arrange(p_cv_risk_1, p_cv_risk_2, p_cv_risk_3, p_cv_risk_4, legend, nrow = 1, widths = c(4,4,4,4,1))
+
+
+ggsave(here(getwd(), "plots", paste0("simu_adapt_cv_risk.png")), plot=p, width = 15, height = 3,  dpi = 300)
+
+```
+
+```{r}
+select_1_df %>% pivot_wider(names_from = X200, values_from = X0.706) %>% round(4)
+```
+
+```{r}
+
+
+```
 
 # plots
 ```{r fig.height=6, fig.width=12, eval=FALSE}
