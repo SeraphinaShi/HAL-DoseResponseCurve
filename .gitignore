@@ -5,3 +5,7 @@
 *.Rdata
 *.png
 *.html
+*.DS_Store
+.DS_Store
+run_simu/plots/
+run_simu/plots/
