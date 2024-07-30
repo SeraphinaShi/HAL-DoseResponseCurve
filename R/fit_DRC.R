@@ -127,7 +127,7 @@ fit_UHAL_DRC <- function(
   mean(predict(hal_fit, new_data = X_new)) } )
   
   # 4. IC-based inference
-  psi_hat_pnt_se <- IC_based_se(X, Y, hal_fit, curvePoints)
+  psi_hat_pnt_se <- IC_based_se(X, Y, hal_fit, curvePoints, family = family)
   
   # returns
   psi_hat_pnt <- cbind(curvePoints, matrix(psi_hat, ncol=1), psi_hat_pnt_se)

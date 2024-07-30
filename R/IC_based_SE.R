@@ -51,7 +51,9 @@ IC_based_se <- function(X, Y, hal_fit, eval_points, family = "binomial", X_unpen
     IC_beta <- cal_IC_for_beta(X = basis_mat_nonzero, 
                                Y = Y, 
                                Y_hat =Y_hat,
-                               beta_n = coef_nonzero
+                               beta_n = coef_nonzero,
+                               family = family,
+                               X_unpenalized = X_unpenalized
     )
     
     if(any(! is.na(IC_beta))){
@@ -69,9 +71,10 @@ IC_based_se <- function(X, Y, hal_fit, eval_points, family = "binomial", X_unpen
           x_basis_a_nonzero <- as.matrix(cbind(1, x_basis_a, as.matrix(X_unpenalized))[, nonzero_idx])
         }
         
-        
         IC_EY <- cal_IC_for_EY(X_new = x_basis_a_nonzero, 
-                               beta_n = coef_nonzero, IC_beta = IC_beta)
+                               beta_n = coef_nonzero,
+                               IC_beta = IC_beta,
+                               family = family)
         
         # empirical SE
         se[i] <- sqrt(var(IC_EY)/n)

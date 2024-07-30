@@ -213,6 +213,3 @@ ggplot(df_ests, aes(x = a, y = y_hat)) +
   geom_line(data = psi0, aes(x=a, y=psi0), color = "red") + 
   theme_bw()
 
-
-
-
